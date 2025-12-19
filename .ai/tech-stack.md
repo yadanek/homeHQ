@@ -35,6 +35,4 @@
 
 - **GitHub Actions:** Zautomatyzowany pipeline budujący obraz Docker i uruchamiający testy sprawdzające reguły dostępu (RLS).
    
-- **Docker:** Standaryzacja środowiska uruchomieniowego (Vite + Nginx), gwarantująca, że aplikacja zadziała identycznie na Twoim komputerze i na serwerze.
-   
-- **DigitalOcean App Platform:** Nowoczesny hosting kontenerów, który zapewni stabilne działanie aplikacji webowej przy stałym, niskim koszcie miesięcznym.
+- **Vercel** 
