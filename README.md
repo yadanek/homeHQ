@@ -1,70 +1,111 @@
-# HomeHQ
+# HomeHQ - Family Management Dashboard
 
-## Project description
+Family management web app designed to reduce parental mental load by centralizing calendars, task lists, and private notes in one secure hub.
 
-HomeHQ is a browser-based family headquarters that centralizes calendars, tasks, and private lists while leveraging a rule-driven AI assistant to relieve the mental load of managing household logistics. Unlike passive calendars, the app understands context: when an admin adds an event such as “Birthday,” “Doctor visit,” or “Parents night out,” the AI engine immediately suggests the relevant follow-up task (buy a gift, book a sitter, gather documents). Role-aware family spaces keep admins in full control and children seeing only shared calendars and lists.
+## Tech Stack
 
-![Version](https://img.shields.io/badge/version-0.0.0-blue)
-![Hosting](https://img.shields.io/badge/hosting-Vercel-black)
-![License](https://img.shields.io/badge/license-To%20Be%20Defined-lightgrey)
+- **Vite 6** - Build tool
+- **TypeScript 5** - Type safety
+- **React 19** - UI library with React Compiler
+- **Tailwind CSS 4** - Styling
+- **date-fns** - Date utilities
+- **Lucide React** - Icons
 
-## Table of contents
+## Getting Started
 
-- [Project description](#project-description)
-- [Tech stack](#tech-stack)
-- [Getting started locally](#getting-started-locally)
-- [Available scripts](#available-scripts)
-- [Project scope](#project-scope)
-- [Project status](#project-status)
-- [License](#license)
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
 
+### Installation
 
-## Tech stack
+```bash
+# Install dependencies
+npm install
 
-- **Frontend:** Vite 6 + React 19 (Actions, `useOptimistic`), Schedule-X calendar, TypeScript 5, Tailwind 4, Shadcn/ui.
-- **Backend:** Supabase (PostgreSQL with RLS, Supabase Auth with `family_id` metadata, Edge Functions for iCal imports and rule evaluation).
-- **AI:** Hard-coded keyword rules inside Edge Functions for MVP; architectural readiness for future OpenRouter.ai LLM enhancements.
-- **CI/CD & hosting:** GitHub Actions builds Docker/test pipelines and validates RLS logic, deployed on Vercel.
+# Start development server
+npm run dev
+```
 
-## Getting started locally
+The app will be available at `http://localhost:5173`
 
-1. Install Node.js (v18 or newer recommended for Vite 7+) and npm.
-2. Clone the repo and install dependencies:
-   ```bash
-   git clone https://github.com/yadanek/homeHQ.git
-   cd homeHQ
-   npm install
-   ```
-3. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-4. Open the local URL (typically `http://localhost:5173`) to interact with the app.
+### Build
 
-Supabase integration requires configuring your own project credentials and Edge Functions; document the necessary environment variables once those services are provisioned. Add a `.nvmrc` file if your team standardizes on a Node version.
+```bash
+# Build for production
+npm run build
 
-## Available scripts
+# Preview production build
+npm run preview
+```
 
-- `npm run dev` – Runs Vite’s dev server with HMR for local development.
-- `npm run build` – Executes `tsc -b` followed by `vite build` to compile production assets.
-- `npm run lint` – Runs ESLint across the project.
-- `npm run preview` – Serves the production build locally for verification.
+## Features Implemented
 
-## Project scope
+### Dashboard View ✅
 
-- **Family setup & auth:** Email/password registration, automatic family creation, invite codes, and role mapping (Administrators vs. limited family members/children).
-- **Calendar + integrations:** Month/week/day responsive views, native event creation with participants, Apple Calendar import (read-only) that triggers background AI analysis.
-- **AI assistant (rule engine):** Hard-coded keyword matching for birthdays, parents-only outings, health, travel, and car-related tasks; suggestions shown inline with event creation or via a modal after import.
-- **Tasks module:** Admin-only task list with sorting, editing, completion, and deletion for AI-generated or manual tasks.
-- **Lists:** Shared vs. private lists with add/remove actions and checkboxes to keep the household aligned.
+- **Calendar Grid** - Monthly calendar with event and task display
+- **Event Color Coding** - Blue for private events, green for family events (US-000)
+- **Private Event Lock Icons** - Visual indicator for private events (US-004)
+- **Date Selection** - Click dates to filter tasks in sidebar
+- **Month Navigation** - Navigate between months with arrow buttons
+- **Filter Toggle** - Everything / My / Family event filter
+- **Daily Tasks Sidebar** - Shows tasks for selected date
+- **Task Completion** - Toggle checkbox with optimistic UI
+- **Responsive Design** - Desktop (calendar + sidebar), Tablet/Mobile (calendar only)
 
-MVP boundaries: web-only (responsive design), read-only Apple import, non-editable AI rules, possible duplicate suggestions on repeated imports, UI-only notifications, and no built-in chat.
+### Data & State Management ✅
 
-## Project status
+- **Custom Hook** - `useDashboard()` for centralized state management
+- **Mock Data Service** - Sample events and tasks for development
+- **Optimistic UI** - Instant feedback for task completion with rollback on error
+- **Error Handling** - Toast notifications for errors
 
-The project is currently in the MVP stage and under active development.
+### Task Creation Modal ✅
+
+- **Task Creation Dialog** - Modal for creating manual tasks
+- **Form Components** - Modular, reusable input components:
+  - `TaskTitleInput` - Required field with validation and a11y
+  - `TaskDueDatePicker` - Optional datetime picker with ISO 8601 conversion
+  - `AssigneePicker` - Reusable family member selector (profiles + members)
+  - `ErrorDisplay` - Accessible error message display
+- **useCreateTask Hook** - React 19 useTransition + Zod validation
+- **Validation** - Client-side Zod schema validation before API call
+- **Accessibility** - ARIA labels, keyboard navigation (ESC to close), focus management
+- **Responsive** - Mobile-first design with stacked buttons on small screens
+- **Animations** - Smooth fade-in/fade-out transitions
+- **Unit Tests** - Comprehensive Vitest tests for all components and hooks
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── ui/              # Reusable UI components (Button, Card, Badge, etc.)
+│   └── dashboard/       # Dashboard-specific components
+├── hooks/               # Custom React hooks
+├── pages/               # Page components
+├── services/            # API services and mock data
+├── types/               # TypeScript type definitions
+├── utils/               # Helper functions and utilities
+└── db/                  # Database types (Supabase)
+```
+
+## Development Notes
+
+- Mock data is used for development (see `src/services/mockData.ts`)
+- Console logs are intentionally left for debugging modal interactions (placeholders)
+- React Compiler is enabled for automatic optimization
+
+## Next Steps
+
+- [ ] Implement Event Creation Modal (US-003)
+- [ ] Implement Task Creation Modal
+- [ ] Add real-time updates
+- [ ] Integrate with Supabase backend
+- [ ] Add authentication flow
+- [ ] Implement AI task suggestions
 
 ## License
 
-This project is licensed under the MIT Licence.
+Private project

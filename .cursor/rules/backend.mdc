@@ -1,0 +1,16 @@
+---
+description: Backend and Database rules for Supabase, RLS, and Edge Functions
+globs: src/db/*.ts,src/lib/*.ts,supabase/functions/**/*.ts
+alwaysApply: false
+---
+
+### Backend and Database
+
+- Use Supabase for backend services, including authentication and database interactions.
+- Follow Supabase guidelines for security and performance.
+- Use Zod schemas to validate data exchanged with the backend.
+- Use SupabaseClient type from `src/db/supabase.client.ts`, not from `@supabase/supabase-js`.
+- Strictly enforce Row Level Security (RLS) for all tables using `auth.uid()` and `family_id`.
+- Implement iCal parsing, AI logic, and sensitive operations exclusively in Supabase Edge Functions.
+- Use React 19 Actions for data mutations to ensure compatibility with optimistic UI updates.
+- Use the service_role key only within Edge Functions, never in the frontend application.

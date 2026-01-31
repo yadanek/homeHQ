@@ -1,204 +1,141 @@
-# Dokument wymagań produktu (PRD) - HomeHQ - Home Headquarters
+# Product Requirements Document (PRD) - HomeHQ (Lean MVP)
 
-## 1. Przegląd produktu
+## 1. Product Overview (v1.0 - Ultra-Lean)
 
-HomeHQ to centrum dowodzenia dla nowoczesnej rodziny – aplikacja webowa (dostępna przez przeglądarkę), która łączy funkcje wspólnego kalendarza i list zadań z unikalnym Asystentem AI opartym na regułach. Głównym celem produktu jest zmniejszenie obciążenia mentalnego (mental load) rodziców, którzy pełnią rolę domowych menedżerów.
+HomeHQ is a web-based "command center" for families. The v1.0 focus is strictly on **Logistics Automation**: reducing a parent's mental load by automatically suggesting tasks based on calendar events.
 
-W odróżnieniu od standardowych kalendarzy, HomeHQ nie tylko przechowuje informacje o wydarzeniach, ale rozumie ich kontekst logistyczny. Dzięki systemowi zdefiniowanych reguł, aplikacja automatycznie sugeruje zadania towarzyszące wydarzeniom (np. przypomnienie o kupnie prezentu przed urodzinami lub zamówieniu opieki do dziecka przed wyjściem rodziców), zanim użytkownik sam o nich pomyśli.
+The core hypothesis is that users will find value in an application that "thinks ahead" by suggesting necessary preparations for family events, even without external integrations or complex list management.
 
-MVP skupia się na weryfikacji hipotezy, że prosty, przewidywalny silnik reguł dostarcza wystarczającą wartość w modelu webowym, by użytkownicy przenieśli swoje zarządzanie domem do nowej aplikacji.
+## 2. The Core Problem
 
-## 2. Problem użytkownika
+Parents suffer from **Mental Load**. Entering "Doctor's Appointment" is easy, but remembering to "Prepare medical records" 24 hours before is the hidden cognitive burden. HomeHQ v1.0 automates the transition from _knowing_ about an event to _preparing_ for it.
 
-Rodzice, a w szczególności główny organizator życia rodzinnego (często nazywany "Project Managerem Domu"), borykają się z trzema głównymi problemami:
+## 3. Simplified Functional Requirements
 
-1. Przeciążenie poznawcze (Mental Load): Samo wpisanie wydarzenia do kalendarza to za mało. Rodzic musi pamiętać o szeregu zadań z nim związanych (np. wpis "Urodziny Jasia" oznacza konieczność pamiętania o zadaniu "Kup prezent").
-2. Rozproszenie narzędzi: Listy zakupów lądują na lodówce lub w komunikatorach, wydarzenia w Kalendarzu Google/Apple, a zadania domowe w głowie. Brak jednego źródła prawdy prowadzi do nieporozumień.
-3. Brak prywatności w narzędziach rodzinnych: Dzieci powinny widzieć kalendarz i listę zakupów, ale nie powinny mieć dostępu do listy prezentów świątecznych czy budżetu.
+### 3.1. Authentication & Family Setup
 
-HomeHQ rozwiązuje te problemy poprzez centralizację danych w chmurze (dostęp WWW), kontrolę uprawnień oraz aktywne sugerowanie zadań, zdejmując z rodzica konieczność pamiętania o wszystkim.
+- **Registration/Login:** Email and password.
+   
+- **The Family Space:** First user to register creates a "Family Hub" and becomes Admin.
+   
+- **Simplified Invitations:** Admin generates a code. New users entering this code are joined to the family as "Members."
+   
+- **Basic Roles:** * **Admin:** Full access.
+   
+    - **Member:** Access to shared and personal content.
+       
 
-## 3. Wymagania funkcjonalne
+### 3.2. Binary Visibility Model
 
-### 3.1. Uwierzytelnianie i Zarządzanie Rodziną (Family Setup)
+To simplify development, we remove "Specific People" sharing.
 
-System musi umożliwiać stworzenie bezpiecznej, odizolowanej przestrzeni dla danych rodziny.
+1. **Private (Only Me):** Visible only to the creator.
+   
+2. **Shared (Family):** Visible to everyone in the family hub.
+   
 
-* Rejestracja i logowanie: Obsługa adresu e-mail i hasła. Dostęp przez przeglądarkę internetową.
-* Tworzenie Przestrzeni Rodzinnej: Użytkownik, który zakłada konto, automatycznie staje się administratorem nowej przestrzeni.
-* Zapraszanie członków: Administrator generuje unikalny kod/link zaproszenia, który inny użytkownik wpisuje po rejestracji, aby dołączyć do istniejącej rodziny.
-* Mapowanie ról (Family Setup): W panelu ustawień Administrator musi przypisać każdego dołączającego użytkownika do jednej z dwóch ról:
-    1. Administrator (Pełny dostęp: widzi wszystko, zarządza zadaniami i ustawieniami).
-    2. Członek Rodziny/Dziecko (Dostęp ograniczony: widzi tylko kalendarz i listy wspólne, brak dostępu do zadań i list prywatnych).
+### 3.3. Manual Calendar (No Import)
 
-### 3.2. Moduł Kalendarza i Integracje
+- **Web View:** Monthly and Daily view of events.
+   
+- **Event Creation:** Title, Date, Time, and a toggle for "Private" or "Shared."
+   
+- **Participants:** Checkboxes to select who is involved in the event.
+   
 
-Kalendarz jest głównym widokiem aplikacji webowej.
+### 3.4. AI Assistant (Immediate Suggestions)
 
-* Widoki: Miesiąc, Tydzień, Dzień (responsywny interfejs webowy).
-* Tworzenie wydarzeń natywnych: Formularz zawiera tytuł, datę/czas, lokalizację oraz obligatoryjną sekcję "Uczestnicy" (checkboxy z imionami członków rodziny).
-* Import z Apple Calendar:
-    * Jednokierunkowa synchronizacja (tylko odczyt, np. poprzez subskrypcję iCal URL).
-    * Importowane wydarzenia są oznaczone specjalną ikoną/kolorem.
-    * Import uruchamia silnik analizy AI w tle.
+The engine only analyzes events during **manual creation** in the web form.
 
-### 3.3. Asystent AI (Silnik Reguł)
+**MVP Rules:**
 
-Serce MVP. System oparty na sztywnych regułach (hard-coded logic) analizujący tytuły wydarzeń i uczestników.
+1. **Birthday:** (Keywords: birthday, bday) -> Suggests: "Buy a gift" (7 days before).
+   
+2. **Health:** (Keywords: doctor, dentist, clinic) -> Suggests: "Prepare medical documents" (1 day before).
+   
+3. **Outing:** (Keywords: cinema, date, dinner / Participants: Admins only) -> Suggests: "Book a babysitter" (3 days before).
+   
+4. **Travel:** (Keywords: flight, trip, vacation) -> Suggests: "Pack bags" (2 days before).
+   
 
-Zasada działania: Analiza następuje jednorazowo w momencie tworzenia wydarzenia lub importu.
+**Interface:**
 
-Zdefiniowane reguły dla MVP:
+- As the user types the title, a small "Suggestion" box appears below the input: _"Detected [Context]. Add task: [Task Name]? [Add Button]"_.
+   
 
-1. Reguła "Urodziny"
-   * Słowa kluczowe: urodziny, urodzinki, birthday, bday, jubileusz.
-   * Akcja: Sugestia zadania "Kupić prezent" z terminem 7 dni przed wydarzeniem.
+### 3.5. Task Module (Simple Tasks)
 
-2. Reguła "Wyjście Rodziców"
-   * Warunek: Uczestnicy to wyłącznie użytkownicy z rolą "Administrator" (brak dzieci).
-   * Słowa kluczowe: kino, teatr, kolacja, randka, opera, koncert.
-   * Akcja: Sugestia zadania "Umówić opiekunkę do dzieci" z terminem 3 dni przed wydarzeniem.
+- **No standalone "Lists":** Users cannot create "Shopping List" or "Home Improvement" folders.
+   
+- **Task Feed:** A single view showing all tasks (Generated by AI or added manually).
+   
+- **Status:** Tasks can be marked as "Completed" or deleted.
+   
+- **Visibility:** Tasks inherit the "Private" or "Shared" status chosen during creation.
+   
 
-3. Reguła "Zdrowie"
-   * Słowa kluczowe: lekarz, wizyta, szczepienie, dentysta, pediatra, przychodnia.
-   * Akcja: Sugestia zadania "Przygotować książeczkę zdrowia i dokumenty" z terminem 1 dzień przed wydarzeniem.
+## 4. Product Boundaries (Out of Scope)
 
-4. Reguła "Podróż"
-   * Słowa kluczowe: wyjazd, wycieczka, lot, wakacje, ferie, urlop.
-   * Akcja: Sugestia zadania "Spakować walizki" z terminem 2 dni przed wydarzeniem.
+- **NO iCal/Apple/Google Import:** All data is entered manually.
+   
+- **NO Standalone Lists:** No custom categories/folders for tasks.
+   
+- **NO "Specific People" Sharing:** Only "Me" or "Everyone."
+   
+- **NO Notifications:** No emails or push notifications. Users see changes when they log in.
+   
+- **NO Mobile App:** Browser only.
+   
 
-5. Reguła "Samochód"
-   * Słowa kluczowe: przegląd, mechanik, opony, ubezpieczenie oc.
-   * Akcja: Sugestia zadania "Przygotować dowód rejestracyjny i dokumenty auta" z terminem 1 dzień przed wydarzeniem.
+## 5. User Stories
 
-Interfejs sugestii:
-* Podczas ręcznego tworzenia (Web): Sekcja pod formularzem z pytaniem "Wykryto kontekst [Nazwa reguły]. Dodać zadanie [Treść zadania]?". Opcje: Checkbox (domyślnie zaznaczony).
-* Podczas importu (Web): System analizuje zaimportowane wydarzenia w tle i buforuje pasujące sugestie. Przy najbliższym logowaniu Administratora wyświetla się okno (modal) "Raport Asystenta", prezentujące listę wykrytych sugestii z możliwością zbiorczego lub pojedynczego zatwierdzenia/odrzucenia.
+### Overview
+- **US-000: Main Dashboard**
+    * As a user, I want to see a dashboard with a month view and a right sidebar so that I can instantly check the family schedule and today's task list.
+    * Acceptance Criterion: Personal events are highlighted in blue, while family events are highlighted in green.
+    * Acceptance Criterion: Clicking on a specific day in the calendar filters the task list in the sidebar to show tasks for that selected date.
 
-### 3.4. Moduł Zadania (TODO)
+### Setup
 
-Lista zadań operacyjnych, widoczna wyłącznie dla roli Administrator.
+- **US-001:** As a user, I want to create a family account so my partner and I can share a digital space.
+   
+- **US-002:** As an Admin, I want to invite my family members via a code so they can see shared events.
+   
 
-* Zadania są niezależnymi bytami w bazie danych (nie są technicznie połączone z wydarzeniem po utworzeniu).
-* Sortowanie: Zaległe, Dziś, Nadchodzące.
-* Funkcje: Odhaczanie (ukończone), edycja tytułu i daty, usuwanie.
+### Calendar & AI
 
-### 3.5. Moduł Listy
+- **US-003:** As a user, I want to manually add "Dentist appointment" and have the system suggest "Prepare documents" so I don't forget them on the day of the visit.
+   
+- **US-004:** As a parent, I want to mark a "Surprise Anniversary Dinner" as **Private** so my kids don't see it on the calendar.
+   
 
-Uniwersalne listy do zarządzania zasobami.
+### Tasks
 
-* CRUD: Tworzenie, edycja, usuwanie list.
-* Widoczność: Przełącznik "Prywatna" (tylko Admini) / "Wspólna" (Cała rodzina).
-* Elementy listy: Dodawanie pozycji, checkbox do odhaczania.
+- **US-005:** As a user, I want to see a list of all pending tasks (both AI-suggested and manual) so I can stay organized.
+   
+- **US-006:** As a user, I want to check off a task as "Done" so my partner knows it has been handled.
 
-## 4. Granice produktu
+### Secure Access and Authentication
+- **US-007:**
+Title: Secure Access
+Description: As a user, I want to be able to register and log in to the system in a way that ensures the security of my data.
+Acceptance Criteria:
+- Login and registration take place on dedicated pages.
+- Logging in requires providing an email address and a password.
+- Registration requires providing an email address, a password, and password confirmation.
+- A non‑logged‑in user sees a page with a short description of what the application does and a suggestion to log in or create an account.
+- The user must be logged in to create events and tasks, as well as to read data in the calendar.
+- The user can log in to the system using a button in the top‑right corner of the @Dashboard.
+- The user can log out of the system using a button in the top‑right corner of the main @Dashboard.
+- External login services (e.g., Google, GitHub) are not used.
+- Password recovery should be possible.
+   
 
-Poniższe funkcjonalności są celowo wyłączone z zakresu MVP:
+## 6. Success Metrics (Minimal)
 
-* Aplikacja Natywna: Produkt dostępny wyłącznie jako aplikacja webowa (RWD - Responsive Web Design). Brak aplikacji w AppStore/Google Play.
-* Zapis do Kalendarza Apple: Aplikacja nie modyfikuje zewnętrznego kalendarza (tylko odczyt).
-* Edycja reguł AI: Użytkownik nie może definiować własnych słów kluczowych.
-* Deduplikacja: Jeśli użytkownik zaimportuje to samo wydarzenie dwukrotnie (np. po usunięciu i ponownym dodaniu konta), system może stworzyć zduplikowane sugestie.
-* Powiadomienia Push: MVP korzysta tylko z powiadomień wewnątrz interfejsu webowego (brak systemowych powiadomień przeglądarki).
-* Czat rodzinny: Komunikacja odbywa się poza aplikacją.
-
-## 5. Historyjki użytkowników
-
-### Uwierzytelnianie i Konfiguracja
-
-US-001 Rejestracja i utworzenie rodziny
-* Tytuł: Zakładanie konta i przestrzeni
-* Opis: Jako nowy użytkownik chcę zarejestrować się w aplikacji webowej, aby automatycznie stać się Administratorem nowej Przestrzeni Rodzinnej.
-* Kryteria akceptacji:
-    1. Użytkownik podaje email/hasło na stronie rejestracji.
-    2. Po sukcesie tworzona jest nowa instancja "Rodziny".
-    3. Użytkownik otrzymuje rolę "Administrator".
-    4. Wyświetla się dashboard startowy (pusty stan).
-
-US-002 Zapraszanie i mapowanie ról
-* Tytuł: Dodawanie członków rodziny
-* Opis: Jako Administrator chcę wygenerować kod zaproszenia i przypisać rolę "Dziecko" do konta mojego syna, aby ograniczyć mu dostęp do danych wrażliwych.
-* Kryteria akceptacji:
-    1. Admin widzi unikalny kod w ustawieniach WWW.
-    2. Drugi użytkownik wpisuje kod podczas rejestracji na stronie.
-    3. Admin w panelu "Użytkownicy" widzi nową osobę i wybiera z listy rolę: "Administrator" lub "Członek Rodziny".
-    4. Zmiana roli natychmiast aktualizuje uprawnienia (przy odświeżeniu strony przez dziecko).
-
-### Kalendarz i AI (Core Features)
-
-US-003 Tworzenie wydarzenia z sugestią AI
-* Tytuł: Ręczne dodawanie wydarzenia z wykryciem reguły
-* Opis: Jako Administrator chcę dodać wydarzenie "Urodziny Babci" przez formularz WWW, aby system zaproponował mi utworzenie zadania zakupu prezentu.
-* Kryteria akceptacji:
-    1. Użytkownik wpisuje tytuł zawierający słowo "Urodziny".
-    2. Pod formularzem pojawia się sekcja "Sugestia Asystenta" z tekstem: "Dodać zadanie: Kupić prezent (termin: data wydarzenia - 7 dni)?".
-    3. Sekcja zawiera checkbox (domyślnie zaznaczony).
-    4. Po kliknięciu "Zapisz", w module Zadania pojawia się nowe zadanie.
-
-US-004 Wykrywanie kontekstu "Tylko Rodzice"
-* Tytuł: Reguła opieki nad dziećmi
-* Opis: Jako Administrator chcę dodać wydarzenie "Randka w kinie" zaznaczając tylko siebie i żonę, aby system zasugerował zamówienie opiekunki.
-* Kryteria akceptacji:
-    1. Użytkownik wybiera z listy uczestników tylko osoby z rolą Admin.
-    2. Tytuł zawiera słowo "kino" lub "randka".
-    3. System wyświetla sugestię zadania "Umówić opiekunkę" (termin: data wydarzenia - 3 dni).
-    4. Jeśli do wydarzenia dodane zostanie Dziecko, sugestia się NIE pojawia.
-
-US-005 Import z Kalendarza Apple (Zatwierdzanie)
-* Tytuł: Weryfikacja sugestii po imporcie przy logowaniu
-* Opis: Jako Administrator chcę po zalogowaniu zobaczyć listę sugestii wygenerowanych na podstawie importowanych wydarzeń, aby ręcznie zdecydować, które zadania faktycznie utworzyć.
-* Kryteria akceptacji:
-    1. System importuje wydarzenia w tle.
-    2. Jeśli reguły zostaną dopasowane, sugestie trafiają do kolejki "Do akceptacji".
-    3. Przy zalogowaniu (lub wejściu na Dashboard), Admin widzi modal/okno "Sugestie Asystenta".
-    4. Okno wyświetla listę: "Wydarzenie X -> Sugerowane zadanie Y".
-    5. Admin może zatwierdzić lub odrzucić każdą sugestię.
-    6. Zatwierdzone sugestie stają się Zadaniami, odrzucone są usuwane z kolejki.
-
-### Zarządzanie Listami i Zadaniami
-
-US-006 Prywatność List
-* Tytuł: Tworzenie listy prywatnej
-* Opis: Jako Administrator chcę stworzyć listę "Prezenty Gwiazdkowe" widoczną tylko dla dorosłych, aby nie popsuć niespodzianki dzieciom.
-* Kryteria akceptacji:
-    1. Przy tworzeniu listy dostępny jest przełącznik "Widoczność: Wspólna / Tylko Admini".
-    2. Po wybraniu "Tylko Admini", lista ma ikonę kłódki/oka.
-    3. Użytkownik z rolą "Członek Rodziny" nie widzi tej listy w swoim panelu WWW.
-
-US-007 Obsługa listy przez Dziecko
-* Tytuł: Dziecko dodaje wpis do listy
-* Opis: Jako Dziecko chcę otworzyć stronę aplikacji i dodać "Mleko" do wspólnej listy zakupów, aby rodzice wiedzieli, co kupić.
-* Kryteria akceptacji:
-    1. Użytkownik z rolą "Członek Rodziny" loguje się i widzi tylko listy "Wspólne".
-    2. Może dodać nowy element tekstowy.
-    3. Może odhaczyć istniejący element.
-    4. Zmiany są widoczne dla wszystkich członków rodziny.
-
-US-008 Zarządzanie Zadaniami
-* Tytuł: Edycja wygenerowanego zadania
-* Opis: Jako Administrator chcę zmienić termin zadania "Kupić prezent" wygenerowanego przez AI, ponieważ wolę to zrobić wcześniej.
-* Kryteria akceptacji:
-    1. Użytkownik wchodzi w zakładkę Zadania.
-    2. Klika na zadanie wygenerowane automatycznie.
-    3. Może zmienić datę, godzinę oraz treść zadania.
-    4. Zmiana nie wpływa na oryginalne wydarzenie w kalendarzu.
-
-## 6. Metryki sukcesu
-
-Aby ocenić powodzenie MVP, monitorowane będą następujące wskaźniki:
-
-1. Wskaźnik Akceptacji AI (AI Acceptance Rate)
-   * Definicja: Procent sugestii wyświetlonych w modalu po imporcie, które zostały zaakceptowane przez Admina.
-   * Cel: Powyżej 70% dla importowanych wydarzeń.
-
-2. Aktywność Rodziny (Family Engagement Score)
-   * Definicja: Średnia liczba interakcji (dodanie wydarzenia, zadania, pozycji na liście lub odhaczenie) na rodzinę tygodniowo w interfejsie webowym.
-   * Cel: Minimum 20 akcji na aktywną rodzinę tygodniowo.
-
-3. Retencja Dnia 30 (D30 Retention)
-   * Definicja: Procent rodzin, które zalogowały się do aplikacji w 30. dniu od rejestracji.
-   * Cel: Powyżej 20%.
-
-4. Wykorzystanie List Prywatnych
-   * Definicja: Procent rodzin, które utworzyły przynajmniej jedną listę prywatną.
-   * Cel: 40% (weryfikuje potrzebę separacji treści dla dorosłych i dzieci).
+1. **Suggestion Conversion:** What percentage of AI suggestions are actually "Added" to the task list? (Target: >50%).
+   
+2. **Daily Active Users (DAU):** Do users log in more than twice a week to check their status?
+   
+3. **Task Completion:** Are the AI-generated tasks actually being checked off.
+   

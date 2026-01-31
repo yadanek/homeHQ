@@ -1,0 +1,584 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Supabase Auth Integration with React SPA
+
+Use this guide to introduce authentication (sign-up & sign-in) in React SPA applications with Vite and client-side session management.
+
+## Before we start
+
+VERY IMPORTANT: Ask me which pages or components should behave differently after introducing authentication. Adjust further steps accordingly.
+
+## Core Requirements
+
+1. Use `@supabase/supabase-js` package for client-side authentication
+2. Use client-side session storage (localStorage) managed automatically by Supabase
+3. Implement React hooks for authentication state management
+4. Use client-side route protection based on authentication state
+5. Handle session persistence and automatic token refresh
+
+## Installation
+
+```bash
+npm install @supabase/supabase-js
+```
+
+## Environment Variables
+
+Create `.env` file with required Supabase credentials (based on the snippet below or `.env.example` in project root)
+
+```env
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
+
+For better TypeScript support, create or update `src/env.d.ts`:
+
+```typescript
+/// <reference types="vite/client" />
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_ANON_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+Make sure `.env.example` is updated with the correct environment variables.
+
+## Implementation Steps
+
+### 1. Create Supabase Client Instance
+
+Create or update Supabase client in `src/db/supabase.client.ts`:
+
+```typescript
+import { createClient as createSupabaseClient, SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
+import type { Database } from './database.types';
+
+export type SupabaseClient = SupabaseClientType<Database>;
+
+// Validate environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
+  throw new Error('Missing VITE_SUPABASE_URL environment variable');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Missing VITE_SUPABASE_ANON_KEY environment variable');
+}
+
+/**
+ * Creates a new Supabase client instance
+ * 
+ * Use this function to create a fresh client for each request
+ * to ensure proper authentication context.
+ * 
+ * @returns Configured Supabase client with Database types
+ */
+export function createClient(): SupabaseClient {
+  return createSupabaseClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
+}
+
+// Create default Supabase client for general use
+export const supabase = createClient();
+```
+
+### 2. Create Authentication Hook
+
+Create a custom React hook for authentication state management in `src/hooks/useAuth.ts`:
+
+```typescript
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/db/supabase.client';
+import type { Tables } from '@/db/database.types';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  display_name?: string;
+}
+
+export interface UserProfile extends Tables<'profiles'> {}
+
+interface UseAuthReturn {
+  user: AuthUser | null;
+  profile: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  hasFamily: boolean;
+  error: Error | null;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+}
+
+/**
+ * Custom hook for authentication and profile management
+ * 
+ * Automatically handles:
+ * - Session initialization on mount
+ * - Profile fetching and caching
+ * - Loading states
+ * - Error handling
+ */
+export function useAuth(): UseAuthReturn {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  /**
+   * Fetches user profile from database
+   */
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const supabase = createClient();
+      
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) {
+        throw new Error(`Failed to fetch profile: ${profileError.message}`);
+      }
+
+      setProfile(data);
+      return data;
+    } catch (err) {
+      console.error('[useAuth] Failed to fetch profile:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+      return null;
+    }
+  }, []);
+
+  /**
+   * Sign in with email and password
+   */
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const supabase = createClient();
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (signInError) {
+        setError(new Error(signInError.message));
+        return { success: false, error: signInError.message };
+      }
+      
+      if (!data.user) {
+        throw new Error('No user returned from sign in');
+      }
+      
+      const authUser: AuthUser = {
+        id: data.user.id,
+        email: data.user.email || '',
+        display_name: data.user.user_metadata?.display_name,
+      };
+      
+      setUser(authUser);
+      await fetchProfile(data.user.id);
+      
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Wystąpił błąd podczas logowania';
+      setError(new Error(errorMessage));
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchProfile]);
+
+  /**
+   * Sign up with email and password
+   */
+  const signUp = useCallback(async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const supabase = createClient();
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (signUpError) {
+        setError(new Error(signUpError.message));
+        return { success: false, error: signUpError.message };
+      }
+      
+      if (!data.user) {
+        throw new Error('No user returned from sign up');
+      }
+      
+      const authUser: AuthUser = {
+        id: data.user.id,
+        email: data.user.email || '',
+        display_name: data.user.user_metadata?.display_name,
+      };
+      
+      setUser(authUser);
+      await fetchProfile(data.user.id);
+      
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Wystąpił błąd podczas rejestracji';
+      setError(new Error(errorMessage));
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchProfile]);
+
+  /**
+   * Sign out current user
+   */
+  const signOut = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { error: signOutError } = await supabase.auth.signOut();
+      
+      if (signOutError) {
+        throw new Error(signOutError.message);
+      }
+      
+      setUser(null);
+      setProfile(null);
+      setError(null);
+    } catch (err) {
+      console.error('[useAuth] Sign out failed:', err);
+      setError(err instanceof Error ? err : new Error('Sign out failed'));
+    }
+  }, []);
+
+  /**
+   * Refreshes user profile (useful after creating family)
+   */
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  }, [user, fetchProfile]);
+
+  /**
+   * Initialize auth on mount
+   */
+  useEffect(() => {
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+
+        if (!mounted) return;
+
+        if (sessionUser) {
+          const authUser: AuthUser = {
+            id: sessionUser.id,
+            email: sessionUser.email || '',
+            display_name: sessionUser.user_metadata?.display_name,
+          };
+
+          setUser(authUser);
+          await fetchProfile(sessionUser.id);
+        }
+      } catch (err) {
+        console.error('[useAuth] Init failed:', err);
+        if (mounted) {
+          setError(err instanceof Error ? err : new Error('Auth initialization failed'));
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth state changes
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      if (session?.user) {
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          display_name: session.user.user_metadata?.display_name,
+        };
+        setUser(authUser);
+        fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
+
+  return {
+    user,
+    profile,
+    isLoading,
+    isAuthenticated: !!user,
+    hasFamily: !!profile?.family_id,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    refreshProfile,
+  };
+}
+```
+
+### 3. Create Auth Forms and Pages
+
+In a React SPA, authentication is handled directly in components using the `useAuth` hook. No API endpoints are needed since Supabase handles authentication server-side.
+
+Create authentication pages and forms:
+
+```typescript
+// src/pages/auth/LoginPage.tsx
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+export function LoginPage() {
+  const { signIn, isLoading, error } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleLogin = async (email: string, password: string) => {
+    setAuthError(null);
+    const result = await signIn(email, password);
+    
+    if (!result.success) {
+      setAuthError(result.error || 'Wystąpił błąd podczas logowania');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Zaloguj się</CardTitle>
+          <CardDescription>
+            Wprowadź swoje dane, aby uzyskać dostęp do konta
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LoginForm
+            onSubmit={handleLogin}
+            isLoading={isLoading}
+            authError={authError || error?.message}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// src/pages/auth/RegisterPage.tsx
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+export function RegisterPage() {
+  const { signUp, isLoading, error } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const handleRegister = async (email: string, password: string) => {
+    setAuthError(null);
+    const result = await signUp(email, password);
+    
+    if (!result.success) {
+      setAuthError(result.error || 'Wystąpił błąd podczas rejestracji');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Utwórz konto</CardTitle>
+          <CardDescription>
+            Zarejestruj się, aby rozpocząć korzystanie z aplikacji
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RegisterForm
+            onSubmit={handleRegister}
+            isLoading={isLoading}
+            authError={authError || error?.message}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+**Note:** In a React SPA, you call Supabase auth methods directly from components. The `useAuth` hook manages the state, and Supabase handles the authentication server-side automatically.
+
+### 4. Protect Routes
+
+In a React SPA, route protection is handled in the main App component using the `useAuth` hook:
+
+```typescript
+// src/App.tsx
+import { useAuth } from './hooks/useAuth';
+import { LandingPage } from './pages/auth/LandingPage';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { CreateFamilyPage } from './pages/onboarding/CreateFamilyPage';
+import { DashboardView } from './pages/DashboardView';
+
+function App() {
+  const { isLoading, isAuthenticated, hasFamily, error } = useAuth();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state (only if not authenticated)
+  if (error && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white border border-red-200 rounded-lg p-6 max-w-md">
+          <h2 className="text-xl font-bold text-red-700 mb-2">
+            Authentication Error
+          </h2>
+          <p className="text-gray-700 mb-4">{error.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated → show landing/login page
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
+
+  // Authenticated but no family → show onboarding
+  if (!hasFamily) {
+    return <CreateFamilyPage />;
+  }
+
+  // Authenticated with family → show dashboard
+  return <DashboardView />;
+}
+
+export default App;
+```
+
+**Alternative: Using React Router (Optional)**
+
+If you prefer URL-based routing, you can use React Router with route guards:
+
+```typescript
+// src/App.tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import { LandingPage } from './pages/auth/LandingPage';
+import { LoginPage } from './pages/auth/LoginPage';
+import { DashboardView } from './pages/DashboardView';
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, hasFamily } = useAuth();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!hasFamily) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <DashboardView />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+## Security Best Practices
+
+- **Environment Variables**: Never commit `.env` files. Use `VITE_SUPABASE_ANON_KEY` (safe for client-side) but never expose service role keys
+- **Input Validation**: Validate all user input client-side before sending to Supabase
+- **Error Handling**: Never expose sensitive error messages to users. Map Supabase errors to user-friendly messages
+- **Session Management**: Let Supabase handle session storage automatically. Don't manually manipulate localStorage
+- **RLS Policies**: Always implement Row Level Security (RLS) policies in Supabase to protect data at the database level
+- **Token Refresh**: Enable `autoRefreshToken: true` in client configuration to automatically refresh expired tokens
+- **Password Reset**: Use Supabase's built-in password reset flow with email verification
+
+## Common Pitfalls
+
+1. **DO NOT** expose service role keys in client-side code (only use `VITE_SUPABASE_ANON_KEY`)
+2. **DO NOT** manually manage session tokens - let Supabase handle it automatically
+3. **DO NOT** skip error handling in auth operations - always handle both success and error cases
+4. **DO NOT** forget to unsubscribe from `onAuthStateChange` listeners in `useEffect` cleanup
+5. **DO NOT** call auth methods without proper loading states - users need feedback during async operations
+6. **DO NOT** forget to handle edge cases like network errors, expired sessions, and invalid credentials
+7. Always check `isLoading` state before rendering protected content to avoid flash of unauthenticated content
