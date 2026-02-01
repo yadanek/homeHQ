@@ -157,28 +157,14 @@ test.describe('Create Event Flow', () => {
 
     // Step 8: Verify success
     await test.step('Verify event creation success', async () => {
-      // Wait for success message OR dialog to close (race condition with 800ms timeout)
-      const successMessage = page.locator('text=/created successfully/i');
       const dialogTitle = page.locator('h2:has-text("Create New Event")');
-      const errorMessage = page.locator('[class*="red"]');
       
-      // Wait a bit for the response
-      await page.waitForTimeout(3000);
+      // Wait for dialog to close (this is the success indicator)
+      // The dialog closes automatically after successful creation
+      await expect(dialogTitle).toBeHidden({ timeout: 10000 });
       
-      // Check for error first
-      const hasError = await errorMessage.isVisible().catch(() => false);
-      if (hasError) {
-        const errorText = await errorMessage.textContent();
-        console.log('Error message:', errorText);
-      }
-      
-      // Verify either success message was shown OR dialog closed
-      const successVisible = await successMessage.isVisible().catch(() => false);
-      const dialogClosed = await dialogTitle.isHidden().catch(() => false);
-      
-      expect(successVisible || dialogClosed).toBeTruthy();
-      
-      expect(successVisible || dialogClosed).toBeTruthy();
+      // Verify we're back on the dashboard
+      await expect(page.locator('h1:has-text("HomeHQ")')).toBeVisible();
     });
 
     // Cleanup: Delete the created event

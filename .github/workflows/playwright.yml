@@ -17,15 +17,19 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-    - name: Create .env.test file
+    - name: Setup test environment
       run: |
-        echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL || 'https://rhjyanpszoqcpdnbvlpg.supabase.co' }}" >> .env.test
-        echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoanlhbnBzem9xY3BkbmJ2bHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjIxMzAsImV4cCI6MjA4NTQzODEzMH0.345xZVB_GkfUwx3i3UkbO2Q8Q_Rnek66XWqLs8mv5jA' }}" >> .env.test
-        echo "E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID || 'b236c6e9-3e68-4cd8-9470-fd6b2500869a' }}" >> .env.test
-        echo "E2E_USERNAME=${{ secrets.E2E_USERNAME || 'zenek@email.com' }}" >> .env.test
-        echo "E2E_PASSWORD=${{ secrets.E2E_PASSWORD || 'start123' }}" >> .env.test
+        cat > .env.test << EOF
+        VITE_SUPABASE_URL=https://rhjyanpszoqcpdnbvlpg.supabase.co
+        VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoanlhbnBzem9xY3BkbmJ2bHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjIxMzAsImV4cCI6MjA4NTQzODEzMH0.345xZVB_GkfUwx3i3UkbO2Q8Q_Rnek66XWqLs8mv5jA
+        E2E_USERNAME_ID=b236c6e9-3e68-4cd8-9470-fd6b2500869a
+        E2E_USERNAME=zenek@email.com
+        E2E_PASSWORD=start123
+        EOF
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --project=chromium
+      env:
+        DOTENV_CONFIG_SILENT: true
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
