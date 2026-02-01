@@ -30,10 +30,10 @@ export function ExplanationCard() {
     <Card className="border-blue-200 bg-blue-50/50">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-blue-900">
-          You'll be the admin
+          You&apos;ll be the admin
         </CardTitle>
         <CardDescription className="text-blue-700">
-          As the creator, you'll have full control over your family hub
+          As the creator, you&apos;ll have full control over your family hub
         </CardDescription>
       </CardHeader>
       <CardContent>

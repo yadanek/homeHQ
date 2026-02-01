@@ -111,8 +111,43 @@ export const createEventSchema = z.object({
   })).optional(),
   
   accept_suggestions: z.array(
-    z.enum(['birthday', 'health', 'outing', 'travel'], {
-      errorMap: () => ({ message: 'Invalid suggestion ID. Must be: birthday, health, outing, or travel' })
+    z.enum([
+      // Birthday events
+      'birthday_invitations',
+      'birthday_cake',
+      'birthday_gifts',
+      // School events
+      'parent_teacher_meeting',
+      'school_trip_food',
+      'school_trip_clothes',
+      'end_of_school_year_gift',
+      'school_year_start_supplies',
+      'school_year_start_books',
+      'semester_end_celebration',
+      'school_performance',
+      'school_break_activities',
+      // Date night / Outing
+      'date_night_babysitter',
+      'date_night_reservation',
+      // Health
+      'health_documents',
+      // Travel
+      'travel_pack',
+      'travel_documents',
+      // Holidays
+      'christmas_gifts',
+      'christmas_outfits',
+      // Costume parties
+      'costume_party',
+      // Sports & Activities
+      'swimming_bag',
+      // Legacy IDs (for backward compatibility)
+      'birthday',
+      'health',
+      'outing',
+      'travel'
+    ], {
+      errorMap: () => ({ message: 'Invalid suggestion ID' })
     })
   ).optional()
 }).refine(

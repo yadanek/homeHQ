@@ -157,19 +157,28 @@ test.describe('Create Event Flow', () => {
 
     // Step 8: Verify success
     await test.step('Verify event creation success', async () => {
-      // Wait for success message
-      const successMessage = page.locator('text=Event created successfully');
-      await expect(successMessage).toBeVisible({ timeout: 5000 });
-
-      // Verify the dialog is closed or shows confirmation
-      // The dialog should either close (not visible) or show the success state
-      await page.waitForTimeout(1000); // Give time for success message to be visible
-
-      // Check if dialog closed (Create Event title not visible) or showing success
-      const dialogClosed = await page.locator('h2:has-text("Create New Event")').isHidden().catch(() => false);
-      const successVisible = await successMessage.isVisible().catch(() => false);
+      // Wait for success message OR dialog to close (race condition with 800ms timeout)
+      const successMessage = page.locator('text=/created successfully/i');
+      const dialogTitle = page.locator('h2:has-text("Create New Event")');
+      const errorMessage = page.locator('[class*="red"]');
       
-      expect(dialogClosed || successVisible).toBeTruthy();
+      // Wait a bit for the response
+      await page.waitForTimeout(3000);
+      
+      // Check for error first
+      const hasError = await errorMessage.isVisible().catch(() => false);
+      if (hasError) {
+        const errorText = await errorMessage.textContent();
+        console.log('Error message:', errorText);
+      }
+      
+      // Verify either success message was shown OR dialog closed
+      const successVisible = await successMessage.isVisible().catch(() => false);
+      const dialogClosed = await dialogTitle.isHidden().catch(() => false);
+      
+      expect(successVisible || dialogClosed).toBeTruthy();
+      
+      expect(successVisible || dialogClosed).toBeTruthy();
     });
 
     // Cleanup: Delete the created event
@@ -232,10 +241,13 @@ test.describe('Create Event Flow', () => {
       await submitButton.click();
 
       // HTML5 validation should prevent submission
-      // Check if form is still open (title field should show validation)
-      const titleInput = page.locator('input#title');
-      const isInvalid = await titleInput.evaluate((el: HTMLInputElement) => !el.validity.valid);
-      expect(isInvalid).toBeTruthy();
+      // The dialog should still be open
+      const dialogTitle = page.locator('h2:has-text("Create New Event")');
+      await expect(dialogTitle).toBeVisible();
+      
+      // No success message should appear
+      const successMessage = page.locator('text=Event created successfully');
+      await expect(successMessage).not.toBeVisible();
     });
   });
 

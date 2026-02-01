@@ -106,20 +106,32 @@ export async function createEvent(
     // In DEV mode, we still fetch from real database (not mock metadata)
     
     // Always fetch profile from database (even in DEV mode)
+    // Use the authenticated supabase client which includes the JWT token
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('family_id, role')
       .eq('id', user.id)
       .single();
 
+    console.log('[createEvent] Profile fetch result:', { 
+      userId: user.id, 
+      profile, 
+      profileError,
+      hasSession: !!(await supabase.auth.getSession()).data.session
+    });
+
     if (profileError || !profile) {
+      console.error('[createEvent] Profile fetch failed:', profileError);
       return {
         success: false,
         error: {
           error: {
             code: 'FORBIDDEN',
             message: 'You must join a family before creating events',
-            details: { reason: 'Profile not found or user not in family' }
+            details: { 
+              reason: 'Profile not found or user not in family',
+              technical: profileError?.message 
+            }
           }
         }
       };
@@ -173,7 +185,11 @@ export async function createEvent(
     };
   } catch (error: unknown) {
     // Step 6: Handle service layer errors
-    const err = error as any;
+    const err = error as Error & { 
+      statusCode?: number; 
+      code?: string; 
+      details?: Record<string, unknown> 
+    };
 
     // Handle ServiceError (from service layer)
     if (err.statusCode) {
@@ -181,7 +197,7 @@ export async function createEvent(
         success: false,
         error: {
           error: {
-            code: err.code,
+            code: err.code || 'SERVICE_ERROR',
             message: err.message,
             details: err.details
           }

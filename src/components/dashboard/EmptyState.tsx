@@ -6,14 +6,14 @@
 import { QuickStartCard } from './QuickStartCard';
 
 interface EmptyStateProps {
-  onTryExample: (title: string) => void;
+  onTryExample: (title?: string) => void;
 }
 
 export function EmptyState({ onTryExample }: EmptyStateProps) {
   const examples = [
     {
-      title: "Dentist appointment next Friday",
-      suggestionPreview: "Prepare medical documents",
+      title: "jasełka u Ani",
+      suggestionPreview: "Przygotować strój dla dziecka na przedstawienie",
     },
     {
       title: "Emma's birthday party",

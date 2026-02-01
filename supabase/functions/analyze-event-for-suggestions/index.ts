@@ -74,34 +74,168 @@ interface SuggestionTemplate {
  * In future iterations, this will be replaced with OpenRouter.ai integration.
  */
 const SUGGESTION_TEMPLATES: SuggestionTemplate[] = [
+  // === BIRTHDAY EVENTS ===
   {
-    id: 'birthday',
-    keywords: ['birthday', 'bday', 'b-day'],
-    title: 'Buy a gift',
+    id: 'birthday_invitations',
+    keywords: ['urodziny', 'birthday', 'bday', 'b-day', 'urodzinki'],
+    title: 'Wysłać zaproszenia / Send invitations',
+    days_before: 14,
+    description: 'Przygotować i wysłać zaproszenia na urodziny'
+  },
+  {
+    id: 'birthday_cake',
+    keywords: ['urodziny', 'birthday', 'bday', 'b-day', 'urodzinki'],
+    title: 'Zamówić tort / Order cake',
     days_before: 7,
-    description: 'Purchase birthday present'
+    description: 'Zamówić tort urodzinowy'
   },
   {
-    id: 'health',
-    keywords: ['doctor', 'dentist', 'clinic', 'checkup', 'medical', 'appointment'],
-    title: 'Prepare medical documents',
+    id: 'birthday_gifts',
+    keywords: ['urodziny', 'birthday', 'bday', 'b-day', 'urodzinki'],
+    title: 'Kupić prezenty i dekoracje / Buy gifts',
+    days_before: 14,
+    description: 'Purchase birthday presents and decorations'
+  },
+
+  // === SCHOOL EVENTS ===
+  {
+    id: 'parent_teacher_meeting',
+    keywords: ['wywiadówka', 'zebranie', 'spotkanie z nauczycielem', 'parent-teacher', 'school meeting'],
+    title: 'Przejrzeć zeszyty dziecka / Review notebooks',
     days_before: 1,
-    description: 'Gather insurance cards and medical history'
+    description: 'Przejrzeć zeszyty i prace dziecka przed wywiadówką'
   },
   {
-    id: 'outing',
-    keywords: ['cinema', 'date', 'dinner', 'movie', 'restaurant'],
-    title: 'Book a babysitter',
+    id: 'school_trip_food',
+    keywords: ['wycieczka', 'school trip', 'field trip', 'wycieczka szkolna'],
+    title: 'Przygotować drugie śniadanie / Pack lunch',
+    days_before: 1,
+    description: 'Przygotować drugie śniadanie i napój na wycieczkę'
+  },
+  {
+    id: 'school_trip_clothes',
+    keywords: ['wycieczka', 'school trip', 'field trip', 'wycieczka szkolna'],
+    title: 'Spakować ubrania / Pack clothes',
+    days_before: 2,
+    description: 'Sprawdzić prognozę pogody i spakować odpowiednie ubrania'
+  },
+  {
+    id: 'end_of_school_year_gift',
+    keywords: ['koniec roku', 'zakończenie roku', 'end of school year', 'last day of school'],
+    title: 'Prezent dla nauczyciela / Teacher gift',
+    days_before: 7,
+    description: 'Kupić prezent dla nauczyciela na zakończenie roku'
+  },
+  {
+    id: 'school_year_start_supplies',
+    keywords: ['początek roku', 'rozpoczęcie roku', 'first day', 'back to school', 'szkoła'],
+    title: 'Kupić przybory szkolne / Buy school supplies',
+    days_before: 14,
+    description: 'Zakupić wszystkie przybory szkolne z listy'
+  },
+  {
+    id: 'school_year_start_books',
+    keywords: ['początek roku', 'rozpoczęcie roku', 'first day', 'back to school', 'szkoła'],
+    title: 'Podpisać podręczniki / Label textbooks',
+    days_before: 7,
+    description: 'Podpisać wszystkie podręczniki i zeszyty'
+  },
+  {
+    id: 'semester_end_celebration',
+    keywords: ['świadectwo', 'koniec semestru', 'report card', 'semester end', 'półrocze'],
+    title: 'Zaplanować świętowanie / Plan celebration',
+    days_before: 1,
+    description: 'Zaplanować rodzinne świętowanie zakończenia semestru'
+  },
+  {
+    id: 'school_performance',
+    keywords: ['przedstawienie', 'akademia', 'jasełka', 'performance', 'school play', 'recital'],
+    title: 'Przygotować strój / Prepare costume',
+    days_before: 7,
+    description: 'Przygotować strój dla dziecka na przedstawienie'
+  },
+  {
+    id: 'school_break_activities',
+    keywords: ['ferie', 'wakacje', 'summer break', 'winter break', 'holiday', 'półkolonie'],
+    title: 'Zapisać na zajęcia / Register for activities',
+    days_before: 60,
+    description: 'Zapisać dzieci na półkolonie lub zajęcia wakacyjne'
+  },
+
+  // === DATE NIGHT / OUTING ===
+  {
+    id: 'date_night_babysitter',
+    keywords: ['cinema', 'date', 'dinner', 'movie', 'restaurant', 'kino', 'randka', 'wyjście', 'wyjscie', 'kolacja'],
+    title: 'Umówić opiekunkę / Book babysitter',
     days_before: 3,
     description: 'Arrange childcare for the event',
     admin_only: true
   },
   {
-    id: 'travel',
-    keywords: ['flight', 'trip', 'vacation', 'holiday', 'travel', 'airport'],
-    title: 'Pack bags',
+    id: 'date_night_reservation',
+    keywords: ['randka', 'kolacja', 'dinner', 'date night', 'restaurant', 'restauracja'],
+    title: 'Zarezerwować stolik / Reserve table',
+    days_before: 3,
+    description: 'Zarezerwować stolik w restauracji'
+  },
+
+  // === HEALTH ===
+  {
+    id: 'health_documents',
+    keywords: ['doctor', 'dentist', 'clinic', 'checkup', 'medical', 'appointment', 'lekarz', 'dentysta', 'pediatra', 'wizyta'],
+    title: 'Przygotować dokumenty / Prepare documents',
+    days_before: 1,
+    description: 'Gather insurance cards, vaccination records and medical history'
+  },
+
+  // === TRAVEL ===
+  {
+    id: 'travel_pack',
+    keywords: ['flight', 'trip', 'vacation', 'holiday', 'travel', 'airport', 'lot', 'wyjazd', 'urlop'],
+    title: 'Spakować walizki / Pack bags',
     days_before: 2,
     description: 'Prepare luggage and travel essentials'
+  },
+  {
+    id: 'travel_documents',
+    keywords: ['wakacje', 'vacation', 'holiday', 'trip', 'urlop', 'wyjazd', 'family vacation'],
+    title: 'Sprawdzić dokumenty / Check documents',
+    days_before: 30,
+    description: 'Sprawdzić ważność dowodów osobistych i paszportów dzieci'
+  },
+
+  // === HOLIDAYS ===
+  {
+    id: 'christmas_gifts',
+    keywords: ['wigilia', 'boże narodzenie', 'christmas', 'święta', 'xmas', 'gwiazdka'],
+    title: 'Kupić prezenty / Buy presents',
+    days_before: 30,
+    description: 'Kupić prezenty świąteczne dla dzieci'
+  },
+  {
+    id: 'christmas_outfits',
+    keywords: ['wigilia', 'boże narodzenie', 'christmas', 'święta', 'choinka'],
+    title: 'Przygotować stroje / Prepare outfits',
+    days_before: 7,
+    description: 'Przygotować odświętne stroje na Wigilię'
+  },
+
+  // === COSTUME PARTIES ===
+  {
+    id: 'costume_party',
+    keywords: ['bal', 'przebieraniec', 'halloween', 'costume', 'przebranie', 'kostium', 'andrzejki', 'karnawał'],
+    title: 'Przygotować kostium / Prepare costume',
+    days_before: 14,
+    description: 'Przygotować lub kupić kostium na bal'
+  },
+
+  // === SPORTS & ACTIVITIES ===
+  {
+    id: 'swimming_bag',
+    keywords: ['basen', 'swimming', 'pool', 'pływalnia', 'zajęcia sportowe', 'sport', 'trening'],
+    title: 'Spakować torbę / Pack sports bag',
+    days_before: 1,
+    description: 'Spakować torbę z kostiumem, ręcznikiem i przyborami'
   }
 ];
 
@@ -366,25 +500,54 @@ serve(async (req: Request) => {
     const suggestions: TaskSuggestion[] = [];
 
     for (const template of SUGGESTION_TEMPLATES) {
-      // Special handling for "outing" template
-      if (template.id === 'outing') {
-        // Only suggest babysitter if event matches outing keywords
+      // Special handling for "date_night_babysitter" template
+      if (template.id === 'date_night_babysitter') {
+        // Only suggest babysitter if event matches date night/outing keywords
         if (!matchesKeywords(title, template.keywords)) {
           continue;
         }
 
-        // Check if all participants are admins (adults)
-        const profileParticipants = participants.filter(p => p.profile_id);
-        const memberParticipants = participants.filter(p => p.member_id);
+        // Get user's family_id to fetch all family members
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('family_id')
+          .eq('id', user.id)
+          .single();
+
+        if (!userProfile?.family_id) {
+          continue;
+        }
+
+        // Fetch all children in the family (family_members with is_admin = false)
+        const { data: allFamilyChildren } = await supabase
+          .from('family_members')
+          .select('id, is_admin')
+          .eq('family_id', userProfile.family_id)
+          .eq('is_admin', false);
+
+        // If there are no children in the family, skip babysitter suggestion
+        if (!allFamilyChildren || allFamilyChildren.length === 0) {
+          continue;
+        }
+
+        // Check which children are NOT participating in the event
+        const participatingChildrenIds = participants
+          .filter(p => p.member_id && p.is_admin === false)
+          .map(p => p.member_id);
         
-        const allProfilesAreAdmins = profileParticipants.length === 0 || 
-          profileParticipants.every(p => p.role === 'admin');
-        const allMembersAreAdmins = memberParticipants.length === 0 || 
-          memberParticipants.every(p => p.is_admin === true);
-        
-        // Only suggest babysitter if ALL participants are admins
-        // (meaning no children are attending, so they need a babysitter)
-        if (allProfilesAreAdmins && allMembersAreAdmins) {
+        const nonParticipatingChildren = allFamilyChildren.filter(
+          (child: any) => !participatingChildrenIds.includes(child.id)
+        );
+
+        // Check if there are adults participating
+        const hasAdultParticipants = participants.some(
+          p => (p.profile_id && p.role === 'admin') || (p.member_id && p.is_admin === true)
+        );
+
+        // Suggest babysitter if:
+        // 1. There are children in the family who are NOT attending
+        // 2. There are adults who ARE attending
+        if (nonParticipatingChildren.length > 0 && hasAdultParticipants) {
           suggestions.push({
             suggestion_id: template.id,
             title: template.title,

@@ -16,13 +16,14 @@ interface CalendarAreaProps {
   selectedDate: Date;
   activeFilter: FilterOption;
   isLoading: boolean;
+  hasAnyEvents: boolean | null;
   onDateSelect: (date: Date) => void;
   onMonthChange: (month: Date) => void;
   onFilterChange: (filter: FilterOption) => void;
   onEventClick: (eventId: string) => void;
   onTaskClick: (taskId: string) => void;
   onTaskToggleComplete: (taskId: string, isCompleted: boolean) => void;
-  onAddEvent: () => void;
+  onAddEvent: (title?: string) => void;
 }
 
 export function CalendarArea({
@@ -32,6 +33,7 @@ export function CalendarArea({
   selectedDate,
   activeFilter,
   isLoading,
+  hasAnyEvents,
   onDateSelect,
   onMonthChange,
   onFilterChange,
@@ -40,7 +42,8 @@ export function CalendarArea({
   onTaskToggleComplete,
   onAddEvent,
 }: CalendarAreaProps) {
-  const hasEvents = events.length > 0;
+  // Show EmptyState only if the family has NO events at all
+  const showEmptyState = hasAnyEvents === false;
 
   return (
     <div className="flex-1 flex flex-col p-4 lg:p-6">
@@ -58,7 +61,9 @@ export function CalendarArea({
         <div className="flex items-center justify-center h-96">
           <div className="text-muted-foreground">Loading...</div>
         </div>
-      ) : hasEvents ? (
+      ) : showEmptyState ? (
+        <EmptyState onTryExample={onAddEvent} />
+      ) : (
         <CalendarGrid
           events={events}
           tasks={tasks}
@@ -69,8 +74,6 @@ export function CalendarArea({
           onTaskClick={onTaskClick}
           onTaskToggleComplete={onTaskToggleComplete}
         />
-      ) : (
-        <EmptyState onTryExample={onAddEvent} />
       )}
     </div>
   );

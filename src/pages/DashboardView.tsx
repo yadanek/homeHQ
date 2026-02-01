@@ -28,6 +28,7 @@ export function DashboardView() {
     tasksForSelectedDate,
     isLoading,
     error,
+    hasAnyEvents,
     handleDateSelect,
     handleMonthChange,
     handleFilterChange,
@@ -42,6 +43,7 @@ export function DashboardView() {
   // State for Create Event Dialog
   const [isCreateEventOpen, setIsCreateEventOpen] = useState(false);
   const [eventDefaultDate, setEventDefaultDate] = useState<Date | undefined>();
+  const [eventDefaultTitle, setEventDefaultTitle] = useState<string | undefined>();
 
   // State for Create Task Dialog
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -63,8 +65,9 @@ export function DashboardView() {
     // TODO: Open Task Edit Modal
   };
 
-  const handleAddEvent = () => {
+  const handleAddEvent = (title?: string) => {
     setEventDefaultDate(selectedDate);
+    setEventDefaultTitle(title);
     setIsCreateEventOpen(true);
   };
 
@@ -133,6 +136,7 @@ export function DashboardView() {
           selectedDate={selectedDate}
           activeFilter={activeFilter}
           isLoading={isLoading}
+          hasAnyEvents={hasAnyEvents}
           onDateSelect={handleDateSelect}
           onMonthChange={handleMonthChange}
           onFilterChange={handleFilterChange}
@@ -155,9 +159,13 @@ export function DashboardView() {
       {/* Create Event Dialog */}
       <CreateEventDialog
         isOpen={isCreateEventOpen}
-        onClose={() => setIsCreateEventOpen(false)}
+        onClose={() => {
+          setIsCreateEventOpen(false);
+          setEventDefaultTitle(undefined);
+        }}
         onSuccess={handleEventCreated}
         defaultDate={eventDefaultDate}
+        defaultTitle={eventDefaultTitle}
       />
 
       {/* Event Details Dialog */}

@@ -3,10 +3,12 @@
  * Encapsulates all business logic and API calls
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { FilterOption } from '@/types/dashboard.types';
 import { useEvents } from '@/hooks/useEvents';
 import { useTasks } from '@/hooks/useTasks';
+import { useAuth } from '@/hooks/useAuth';
+import { createClient } from '@/db/supabase.client';
 import { logError } from '@/utils/response.utils';
 import {
   getMonthDateRange,
@@ -22,6 +24,9 @@ export function useDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
+  const [hasAnyEvents, setHasAnyEvents] = useState<boolean | null>(null);
+
+  const { profile } = useAuth();
 
   // Calculate date range for current month
   const dateRange = useMemo(() => getMonthDateRange(currentMonth), [currentMonth]);
@@ -80,6 +85,37 @@ export function useDashboard() {
   // Combined error handling
   const error = eventsError || tasksError;
 
+  // Check if family has any events at all (for EmptyState logic)
+  useEffect(() => {
+    const checkForAnyEvents = async () => {
+      if (!profile?.family_id) {
+        setHasAnyEvents(null);
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { count, error } = await supabase
+          .from('events')
+          .select('id', { count: 'exact', head: true })
+          .eq('family_id', profile.family_id)
+          .limit(1);
+
+        if (error) {
+          console.error('Failed to check for events:', error);
+          setHasAnyEvents(null);
+        } else {
+          setHasAnyEvents((count ?? 0) > 0);
+        }
+      } catch (err) {
+        console.error('Error checking for events:', err);
+        setHasAnyEvents(null);
+      }
+    };
+
+    checkForAnyEvents();
+  }, [profile?.family_id, events]); // Re-check when events change (after create/delete)
+
   // Handlers
   const handleDateSelect = setSelectedDate;
 
@@ -119,6 +155,7 @@ export function useDashboard() {
     isLoadingEvents,
     isLoadingTasks,
     error,
+    hasAnyEvents,
 
     // Handlers
     handleDateSelect,

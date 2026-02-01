@@ -65,13 +65,13 @@ export function CalendarControls({
         <FilterToggle activeFilter={activeFilter} onChange={onFilterChange} />
         
         {/* Desktop: button with text */}
-        <Button onClick={onAddEvent} className="hidden sm:inline-flex gap-2">
+        <Button onClick={() => onAddEvent()} className="hidden sm:inline-flex gap-2">
           <Plus className="w-4 h-4" />
           Add Event
         </Button>
         
         {/* Mobile: icon only */}
-        <Button onClick={onAddEvent} size="icon" className="sm:hidden">
+        <Button onClick={() => onAddEvent()} size="icon" className="sm:hidden">
           <Plus className="w-4 h-4" />
         </Button>
       </div>

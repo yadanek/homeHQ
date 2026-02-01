@@ -24,6 +24,7 @@ interface CreateEventDialogProps {
   onClose: () => void;
   onSuccess?: () => void;
   defaultDate?: Date;
+  defaultTitle?: string;
 }
 
 /**
@@ -33,7 +34,8 @@ export function CreateEventDialog({
   isOpen, 
   onClose, 
   onSuccess,
-  defaultDate 
+  defaultDate,
+  defaultTitle
 }: CreateEventDialogProps) {
   const { createEvent, isLoading, error, data, reset } = useCreateEvent();
   const { members } = useFamilyMembers();
@@ -48,7 +50,7 @@ export function CreateEventDialog({
   }, [members]);
   
   // Form state
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(defaultTitle || '');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState(
     defaultDate 
@@ -94,10 +96,17 @@ export function CreateEventDialog({
     }
   }, [isOpen, profile?.family_id]);
 
+  // Update title when defaultTitle changes
+  useEffect(() => {
+    if (defaultTitle) {
+      setTitle(defaultTitle);
+    }
+  }, [defaultTitle]);
+
   // Pobierz AI suggestions gdy użytkownik wpisze tytuł
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!title.trim() || title.trim().length < 3) {
+      if (!title || typeof title !== 'string' || !title.trim() || title.trim().length < 3) {
         setPreviewSuggestions([]);
         return;
       }
@@ -151,7 +160,7 @@ export function CreateEventDialog({
         });
         
         console.log('[CreateEventDialog] Invoking Edge Function with body:', {
-          title: title.trim(),
+          title: typeof title === 'string' ? title.trim() : title,
           start_time: new Date(startTime).toISOString(),
           participant_ids: selectedParticipantIds,
           member_ids: selectedMemberIds,
@@ -170,7 +179,7 @@ export function CreateEventDialog({
           'analyze-event-for-suggestions',
           {
             body: {
-              title: title.trim(),
+              title: typeof title === 'string' ? title.trim() : title,
               start_time: new Date(startTime).toISOString(),
               participant_ids: selectedParticipantIds,
               member_ids: selectedMemberIds,
@@ -200,8 +209,8 @@ export function CreateEventDialog({
     e.preventDefault();
 
     const request: CreateEventRequest = {
-      title: title.trim(),
-      description: description.trim() || undefined,
+      title: typeof title === 'string' ? title.trim() : '',
+      description: typeof description === 'string' ? description.trim() || undefined : undefined,
       start_time: new Date(startTime).toISOString(),
       end_time: new Date(endTime).toISOString(),
       is_private: isPrivate,
@@ -238,14 +247,14 @@ export function CreateEventDialog({
 
   const handleClose = useCallback(() => {
     reset();
-    setTitle('');
+    setTitle(defaultTitle || '');
     setDescription('');
     setSelectedParticipantIds([]);
     setSelectedMemberIds([]);
     setAcceptedSuggestions([]);
     setPreviewSuggestions([]);
     onClose();
-  }, [reset, onClose]);
+  }, [reset, defaultTitle, onClose]);
 
   const toggleSuggestion = (suggestionId: string) => {
     setAcceptedSuggestions(prev =>
@@ -284,10 +293,10 @@ export function CreateEventDialog({
         className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
+        <div className="p-4">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h2 id="dialog-title" className="text-2xl font-bold">Create New Event</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 id="dialog-title" className="text-lg font-bold">Create New Event</h2>
             <Button
               variant="ghost"
               size="icon"
@@ -298,10 +307,10 @@ export function CreateEventDialog({
             </Button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {/* Title */}
             <div>
-              <label htmlFor="title" className="block text-sm font-medium mb-2">
+              <label htmlFor="title" className="block text-xs font-medium mb-1">
                 Event Title *
               </label>
               <input
@@ -311,30 +320,30 @@ export function CreateEventDialog({
                 onChange={(e) => setTitle(e.target.value)}
                 required
                 maxLength={200}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                className="w-full px-2 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                 placeholder="e.g., Doctor appointment, Birthday party"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-2">
+              <label htmlFor="description" className="block text-xs font-medium mb-1">
                 Description
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                rows={2}
+                className="w-full px-2 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                 placeholder="Add details about the event..."
               />
             </div>
 
             {/* Time inputs */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="startTime" className="block text-sm font-medium mb-2">
+                <label htmlFor="startTime" className="block text-xs font-medium mb-1">
                   Start Time *
                 </label>
                 <input
@@ -343,12 +352,12 @@ export function CreateEventDialog({
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-2 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
 
               <div>
-                <label htmlFor="endTime" className="block text-sm font-medium mb-2">
+                <label htmlFor="endTime" className="block text-xs font-medium mb-1">
                   End Time *
                 </label>
                 <input
@@ -357,7 +366,7 @@ export function CreateEventDialog({
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                  className="w-full px-2 py-1.5 text-sm border rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
             </div>
@@ -369,15 +378,15 @@ export function CreateEventDialog({
                 checked={isPrivate}
                 onCheckedChange={(checked) => setIsPrivate(checked === true)}
               />
-              <label htmlFor="isPrivate" className="text-sm font-medium cursor-pointer">
+              <label htmlFor="isPrivate" className="text-xs font-medium cursor-pointer">
                 Make this event private (visible only to you)
               </label>
             </div>
 
             {/* Participants Section */}
-            <div className="space-y-3 border-t pt-6">
-              <Label className="text-base font-medium">Participants (Optional)</Label>
-              <p className="text-sm text-muted-foreground">
+            <div className="space-y-2 border-t pt-3">
+              <Label className="text-sm font-medium">Participants (Optional)</Label>
+              <p className="text-xs text-muted-foreground">
                 Select who will attend this event. This helps AI suggest relevant tasks.
               </p>
               
@@ -394,14 +403,14 @@ export function CreateEventDialog({
               
               {/* Family Members (without accounts) */}
               {members && members.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  <div className="text-sm font-medium text-foreground">
+                <div className="space-y-1.5 mt-2">
+                  <div className="text-xs font-medium text-foreground">
                     Family Members ({members.length} available)
                   </div>
                   {members.map((member) => (
                     <label
                       key={member.id}
-                      className="flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-pointer transition-colors"
+                      className="flex items-center gap-2 p-1.5 rounded-md hover:bg-accent cursor-pointer transition-colors"
                     >
                       <Checkbox
                         checked={selectedMemberIds.includes(member.id)}
@@ -424,12 +433,12 @@ export function CreateEventDialog({
                           }
                         }}
                       />
-                      <span className="text-2xl" aria-hidden="true">
+                      <span className="text-lg" aria-hidden="true">
                         {member.is_admin ? '👤' : '👶'}
                       </span>
-                      <span className="flex-1">
+                      <span className="flex-1 text-sm">
                         {member.name}
-                        <span className="text-xs text-muted-foreground ml-2">
+                        <span className="text-xs text-muted-foreground ml-1">
                           ({member.is_admin ? 'Adult' : 'Child'})
                         </span>
                       </span>
@@ -440,7 +449,7 @@ export function CreateEventDialog({
               
               {/* Empty state */}
               {(!profiles || profiles.length === 0) && (!members || members.length === 0) && (
-                <div className="text-sm text-muted-foreground text-center py-4 bg-muted rounded-md">
+                <div className="text-xs text-muted-foreground text-center py-2 bg-muted rounded-md">
                   No family members yet. You can add them in Family Hub.
                 </div>
               )}
@@ -448,31 +457,31 @@ export function CreateEventDialog({
 
             {/* AI Suggestions Preview */}
             {(previewSuggestions.length > 0 || isLoadingSuggestions) && (
-              <div className="border-t pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Sparkles className="h-5 w-5 text-purple-500" />
-                  <h3 className="text-lg font-semibold">
+              <div className="border-t pt-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  <h3 className="text-sm font-semibold">
                     AI Task Suggestions
                   </h3>
                 </div>
                 
                 {isLoadingSuggestions ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                    <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">
                       Analyzing event...
                     </span>
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                       Based on your event, we suggest these tasks:
                     </p>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {previewSuggestions.map((suggestion) => (
                         <div
                           key={suggestion.suggestion_id}
-                          className="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-800"
+                          className="flex items-start space-x-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-800"
                         >
                           <Checkbox
                             id={`suggestion-${suggestion.suggestion_id}`}
@@ -482,12 +491,12 @@ export function CreateEventDialog({
                           <div className="flex-1">
                             <label
                               htmlFor={`suggestion-${suggestion.suggestion_id}`}
-                              className="font-medium cursor-pointer"
+                              className="text-sm font-medium cursor-pointer"
                             >
                               {suggestion.title}
                             </label>
                             {suggestion.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                                 {suggestion.description}
                               </p>
                             )}
@@ -507,8 +516,8 @@ export function CreateEventDialog({
 
             {/* Error Display */}
             {error && (
-              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <p className="text-sm text-red-800 dark:text-red-400 font-medium">
+              <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                <p className="text-xs text-red-800 dark:text-red-400 font-medium">
                   {error.error.message}
                 </p>
               </div>
@@ -516,8 +525,8 @@ export function CreateEventDialog({
 
             {/* Success Display */}
             {data?.event && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                <p className="text-sm text-green-800 dark:text-green-400 font-medium">
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <p className="text-xs text-green-800 dark:text-green-400 font-medium">
                   ✅ Event created successfully!
                 </p>
                 {data.created_tasks.length > 0 && (
@@ -529,7 +538,7 @@ export function CreateEventDialog({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-6">
+            <div className="flex justify-end space-x-2 pt-3">
               {!data?.event ? (
                 <>
                   <Button
