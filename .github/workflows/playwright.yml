@@ -20,11 +20,11 @@ jobs:
     - name: Setup test environment
       run: |
         cat > .env.test << EOF
-        VITE_SUPABASE_URL=https://rhjyanpszoqcpdnbvlpg.supabase.co
-        VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoanlhbnBzem9xY3BkbmJ2bHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4NjIxMzAsImV4cCI6MjA4NTQzODEzMH0.345xZVB_GkfUwx3i3UkbO2Q8Q_Rnek66XWqLs8mv5jA
-        E2E_USERNAME_ID=b236c6e9-3e68-4cd8-9470-fd6b2500869a
-        E2E_USERNAME=zenek@email.com
-        E2E_PASSWORD=start123
+        VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        E2E_USERNAME_ID=${{ secrets.E2E_USERNAME_ID }}
+        E2E_USERNAME=${{ secrets.E2E_USERNAME }}
+        E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
         EOF
     - name: Run Playwright tests
       run: npx playwright test --project=chromium
