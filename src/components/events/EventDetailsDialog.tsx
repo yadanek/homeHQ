@@ -17,6 +17,7 @@ interface EventDetailsDialogProps {
   currentUserId?: string;
   onClose: () => void;
   onEventDeleted?: () => void;
+  onEventUpdated?: () => void;
 }
 
 export function EventDetailsDialog({ 
@@ -24,7 +25,8 @@ export function EventDetailsDialog({
   eventId,
   currentUserId,
   onClose,
-  onEventDeleted
+  onEventDeleted,
+  onEventUpdated
 }: EventDetailsDialogProps) {
   
   // Handle Escape key
@@ -62,6 +64,7 @@ export function EventDetailsDialog({
           currentUserId={currentUserId}
           onClose={onClose}
           onEventDeleted={onEventDeleted}
+          onEventUpdated={onEventUpdated}
         />
       </div>
     </div>

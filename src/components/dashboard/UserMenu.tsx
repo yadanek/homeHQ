@@ -1,7 +1,7 @@
 /**
  * UserMenu - User menu component for Dashboard header
  * 
- * Displays user email and provides logout option.
+ * Displays user name (or email as fallback) and provides logout option.
  * Located in the top-right corner of the Dashboard.
  */
 
@@ -14,13 +14,14 @@ import { LogOut, User } from 'lucide-react';
  * UserMenu Component
  * 
  * Features:
- * - Displays user email
+ * - Displays user name (from profile or user metadata)
+ * - Shows email as secondary info if name is available
  * - Dropdown menu with logout option
  * - Accessible keyboard navigation
  * - Click outside to close
  */
 export function UserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -67,12 +68,15 @@ export function UserMenu() {
     }
   };
 
-  const userInitials = user?.email
-    ? user.email
-        .split('@')[0]
-        .slice(0, 2)
-        .toUpperCase()
-    : 'U';
+  // Get display name from profile or user metadata, fallback to email
+  const displayName = profile?.display_name || user?.display_name || user?.email || 'User';
+  
+  const userInitials = displayName
+    .split(' ')
+    .map(word => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'U';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -87,7 +91,7 @@ export function UserMenu() {
         aria-label="User menu"
       >
         <User className="h-4 w-4" />
-        <span className="hidden sm:inline">{user?.email || 'User'}</span>
+        <span className="hidden sm:inline">{displayName}</span>
         <span className="sm:hidden">{userInitials}</span>
       </Button>
 
@@ -99,9 +103,12 @@ export function UserMenu() {
           aria-orientation="vertical"
         >
           <div className="py-1">
-            {/* User Email */}
+            {/* User Name */}
             <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-              <p className="font-medium">{user?.email || 'User'}</p>
+              <p className="font-medium">{displayName}</p>
+              {user?.email && displayName !== user.email && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{user.email}</p>
+              )}
             </div>
 
             {/* Logout Option */}

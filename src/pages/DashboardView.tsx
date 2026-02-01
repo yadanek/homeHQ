@@ -74,8 +74,9 @@ export function DashboardView() {
   };
 
   const handleEventCreated = async () => {
-    // Refresh events after successful creation
-    await refetchEvents();
+    // Refresh events and tasks after successful creation
+    // (event creation may include tasks from suggestions)
+    await Promise.all([refetchEvents(), refetchTasks()]);
   };
 
   const handleEventDeleted = async () => {
@@ -166,6 +167,7 @@ export function DashboardView() {
         currentUserId={user?.id}
         onClose={() => setSelectedEventId(null)}
         onEventDeleted={handleEventDeleted}
+        onEventUpdated={refetchEvents}
       />
 
       {/* Create Task Dialog */}

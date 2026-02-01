@@ -1,24 +1,23 @@
 -- Simplified TASKS policy for MVP
--- Allow all operations for authenticated users with a family
+-- Allow all operations for authenticated users in the same family
 
 DROP POLICY IF EXISTS tasks_all_authenticated ON tasks;
 
--- Simple policy: if you're in a family, you can manage all tasks
+-- Fixed policy: users can only see and manage tasks from their own family
+-- Uses direct comparison instead of IN subquery for better performance and reliability
 CREATE POLICY tasks_all_authenticated
   ON tasks
   FOR ALL
   TO authenticated
   USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() 
-      AND family_id IS NOT NULL
+    family_id = (
+      SELECT family_id FROM profiles 
+      WHERE id = auth.uid()
     )
   )
   WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE id = auth.uid() 
-      AND family_id IS NOT NULL
+    family_id = (
+      SELECT family_id FROM profiles 
+      WHERE id = auth.uid()
     )
   );

@@ -27,7 +27,10 @@ export function transformToCalendarItems(
     start: new Date(event.start_time),
     end: new Date(event.end_time),
     isPrivate: event.is_private,
-    participants: event.participants,
+    participants: event.participants.map(p => ({
+      id: p.profile?.id || p.member?.id || p.id,
+      display_name: p.profile?.display_name || p.member?.name || 'Unknown'
+    })),
     rawData: event,
   }));
 

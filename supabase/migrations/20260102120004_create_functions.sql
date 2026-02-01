@@ -32,6 +32,11 @@ begin
     raise exception 'all parameters are required';
   end if;
 
+  -- check if user already has a profile (prevents duplicate family creation)
+  if exists (select 1 from profiles where id = user_id) then
+    raise exception 'user already belongs to a family';
+  end if;
+
   -- insert new family record
   insert into families (name)
   values (family_name)

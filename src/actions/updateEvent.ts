@@ -36,9 +36,10 @@ export type UpdateEventResult =
  * 1. Validate eventId format early (fail-fast)
  * 2. Authenticate user and extract context
  * 3. Validate input with Zod schema
- * 4. Additional business rule validation
- * 5. Call EventsService to update event
- * 6. Return formatted response or error
+ * 4. Get user's family_id from profiles table
+ * 5. Additional business rule validation
+ * 6. Call EventsService to update event
+ * 7. Return formatted response or error
  * 
  * Error handling:
  * - 400: Invalid eventId or validation errors
@@ -123,9 +124,29 @@ export async function updateEvent(
       };
     }
 
-    // Step 4: Get user context from JWT metadata
-    const { data: { session } } = await supabase.auth.getSession();
-    const familyId = user.user_metadata?.family_id || session?.user?.user_metadata?.family_id;
+    // Step 4: Get user context (family_id from profile)
+    // Fetch from database, not JWT metadata
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('family_id')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.warn(`Failed to get profile for user ${user.id}:`, profileError);
+      return {
+        success: false,
+        error: {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You must join a family before updating events',
+            details: { reason: 'Profile not found or user not in family' }
+          }
+        }
+      };
+    }
+
+    const familyId = profile.family_id;
 
     if (!familyId) {
       console.warn(`User ${user.id} attempted to update event without family`);

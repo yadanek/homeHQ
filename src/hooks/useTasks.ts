@@ -395,9 +395,7 @@ export function useCreateTask() {
     setError(null);
     setData(null);
     setIsLoading(false);
-  }, []);
-
-  return {
+  }, []);  return {
     createTask,
     isLoading,
     error,

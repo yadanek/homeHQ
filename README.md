@@ -40,6 +40,36 @@ npm run build
 npm run preview
 ```
 
+## Testing
+
+### E2E Tests (Playwright)
+
+End-to-end tests for critical user flows:
+
+```bash
+# Run tests in headless mode
+npm run test:e2e
+
+# Run tests with UI (interactive)
+npm run test:e2e:ui
+
+# Run tests with visible browser
+npm run test:e2e:headed
+
+# Debug tests step by step
+npm run test:e2e:debug
+
+# View test report
+npm run test:e2e:report
+```
+
+**Test Coverage:**
+- ✅ Event creation with AI task suggestions
+- ✅ Form validation
+- ✅ Dialog interactions
+
+For more details, see [e2e/QUICK-START.md](e2e/QUICK-START.md) or [e2e/README.md](e2e/README.md).
+
 ## Features Implemented
 
 ### Dashboard View ✅

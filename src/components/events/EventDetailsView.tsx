@@ -7,26 +7,32 @@
  * - Participant list
  * - Privacy indicator
  * 
+ * Supports edit mode for event creators:
+ * - Toggle between view and edit modes
+ * - Full form for updating event details
+ * 
  * Handles various states:
  * - Loading state with skeleton
  * - Error states (404, 403, 400, 500)
  * - Success state with full event details
  */
 
-import { Lock, Users, Calendar, Clock, AlertCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Lock, Users, Calendar, Clock, AlertCircle, XCircle, Edit2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useEvent } from '@/hooks/useEvents';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteEventButton } from '@/components/events/DeleteEventButton';
-import { cn } from '@/lib/utils';
+import { EditEventForm } from '@/components/events/EditEventForm';
 
 interface EventDetailsViewProps {
   eventId: string;
   currentUserId?: string;
   onClose?: () => void;
   onEventDeleted?: () => void;
+  onEventUpdated?: () => void;
 }
 
 /**
@@ -138,22 +144,26 @@ export function EventDetailsView({
   eventId, 
   currentUserId,
   onClose,
-  onEventDeleted 
+  onEventDeleted,
+  onEventUpdated
 }: EventDetailsViewProps) {
   const { event, isLoading, error, errorCode, refetch } = useEvent(eventId);
-  
-  // Debug: Log event data to see participants structure
-  if (event) {
-    console.log('EventDetailsView - Event data:', {
-      id: event.id,
-      title: event.title,
-      participants: event.participants,
-      participantsCount: event.participants.length
-    });
-  }
+  const [isEditMode, setIsEditMode] = useState(false);
   
   // Check if current user is the event creator
   const isCreator = currentUserId && event?.created_by === currentUserId;
+
+  // Handle successful edit
+  const handleEditSuccess = () => {
+    setIsEditMode(false);
+    refetch(); // Reload event data to show updated values
+    onEventUpdated?.(); // Notify parent to refresh
+  };
+
+  // Handle cancel edit
+  const handleEditCancel = () => {
+    setIsEditMode(false);
+  };
 
   // Loading state
   if (isLoading) {
@@ -184,6 +194,17 @@ export function EventDetailsView({
     );
   }
 
+  // Show edit form if in edit mode and user is creator
+  if (isEditMode && isCreator) {
+    return (
+      <EditEventForm
+        event={event}
+        onSuccess={handleEditSuccess}
+        onCancel={handleEditCancel}
+      />
+    );
+  }
+
   // Format dates
   const startDate = new Date(event.start_time);
   const endDate = new Date(event.end_time);
@@ -208,6 +229,17 @@ export function EventDetailsView({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            {isCreator && (
+              <Button
+                onClick={() => setIsEditMode(true)}
+                variant="outline"
+                size="sm"
+                aria-label="Edit event"
+              >
+                <Edit2 className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            )}
             {onClose && (
               <Button
                 onClick={onClose}

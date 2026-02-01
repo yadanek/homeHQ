@@ -102,7 +102,16 @@ export class FamiliesService {
       );
     }
 
-    // 3. Fetch created family and profile data
+    // 3. Refresh session to get updated JWT with family_id
+    // The database trigger updated raw_app_meta_data, but we need to refresh
+    // the session to get the updated JWT for RLS policies to work
+    const { error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) {
+      console.warn('[createFamily] Failed to refresh session after family creation:', refreshError);
+      // Continue anyway - we'll try to read the data
+    }
+
+    // 4. Fetch created family and profile data
     const { data: family, error: familyError } = await supabase
       .from('families')
       .select('id, name, created_at')
@@ -138,13 +147,6 @@ export class FamiliesService {
         'DATABASE_ERROR',
         { userId, originalError: profileError }
       );
-    }
-
-    // 4. Sync family_id to JWT app_metadata for RLS policies
-    const { error: syncError } = await supabase.rpc('sync_current_user_jwt');
-    if (syncError) {
-      console.warn('Failed to sync JWT (non-fatal):', syncError);
-      // Don't throw - family was created successfully, JWT sync is optimization
     }
 
     // 5. Return formatted response

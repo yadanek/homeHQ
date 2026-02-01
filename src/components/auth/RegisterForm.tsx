@@ -35,14 +35,17 @@ export function RegisterForm({
   onSuccess 
 }: RegisterFormProps) {
   const { signUp, isLoading, error: authError } = useAuth();
+  const nameId = useId();
   const emailId = useId();
   const passwordId = useId();
   const confirmPasswordId = useId();
   
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
@@ -50,6 +53,16 @@ export function RegisterForm({
 
   // Email validation regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateName = useCallback((value: string): string | undefined => {
+    if (!value.trim()) {
+      return 'Imię jest wymagane';
+    }
+    if (value.trim().length < 2) {
+      return 'Imię musi mieć minimum 2 znaki';
+    }
+    return undefined;
+  }, []);
 
   const validateEmail = useCallback((value: string): string | undefined => {
     if (!value.trim()) {
@@ -81,6 +94,14 @@ export function RegisterForm({
     return undefined;
   }, []);
 
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setName(value);
+    if (validationErrors.name) {
+      setValidationErrors(prev => ({ ...prev, name: undefined }));
+    }
+  }, [validationErrors.name]);
+
   const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
@@ -109,6 +130,11 @@ export function RegisterForm({
       setValidationErrors(prev => ({ ...prev, confirmPassword: undefined }));
     }
   }, [validationErrors.confirmPassword]);
+
+  const handleNameBlur = useCallback(() => {
+    const error = validateName(name);
+    setValidationErrors(prev => ({ ...prev, name: error }));
+  }, [name, validateName]);
 
   const handleEmailBlur = useCallback(() => {
     const error = validateEmail(email);
@@ -141,12 +167,14 @@ export function RegisterForm({
     }
     
     // Validate all fields
+    const nameError = validateName(name);
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
     const confirmPasswordError = validateConfirmPassword(confirmPassword, password);
     
-    if (emailError || passwordError || confirmPasswordError) {
+    if (nameError || emailError || passwordError || confirmPasswordError) {
       setValidationErrors({
+        name: nameError,
         email: emailError,
         password: passwordError,
         confirmPassword: confirmPasswordError,
@@ -158,17 +186,20 @@ export function RegisterForm({
     setValidationErrors({});
     
     // Submit form using useAuth
-    console.log('📝 [RegisterForm.handleSubmit] Calling signUp with email:', email.trim());
-    const result = await signUp(email.trim(), password);
+    console.log('📝 [RegisterForm.handleSubmit] Calling signUp with email:', email.trim(), 'and name:', name.trim());
+    const result = await signUp(email.trim(), password, name.trim());
     
     if (result.success && onSuccess) {
       onSuccess();
     }
-  }, [email, password, confirmPassword, validateEmail, validatePassword, validateConfirmPassword, signUp, onSuccess, isLoading]);
+  }, [name, email, password, confirmPassword, validateName, validateEmail, validatePassword, validateConfirmPassword, signUp, onSuccess, isLoading]);
 
+  const nameError = validationErrors.name;
   const emailError = validationErrors.email;
   const passwordError = validationErrors.password;
   const confirmPasswordError = validationErrors.confirmPassword;
+  const nameErrorId = `${nameId}-error`;
+  const nameHintId = `${nameId}-hint`;
   const emailErrorId = `${emailId}-error`;
   const emailHintId = `${emailId}-hint`;
   const passwordErrorId = `${passwordId}-error`;
@@ -185,6 +216,37 @@ export function RegisterForm({
       {authErrorMessage && (
         <ErrorDisplay error={authErrorMessage} />
       )}
+
+      {/* Name Field */}
+      <div className="space-y-2">
+        <Label htmlFor={nameId}>
+          Imię <span className="text-destructive ml-1" aria-hidden="true">*</span>
+        </Label>
+        <Input
+          id={nameId}
+          type="text"
+          value={name}
+          onChange={handleNameChange}
+          onBlur={handleNameBlur}
+          placeholder="Twoje imię"
+          required
+          disabled={isLoading}
+          aria-describedby={nameError ? nameErrorId : nameHintId}
+          aria-invalid={nameError ? 'true' : 'false'}
+          className={nameError ? 'border-destructive' : ''}
+          autoComplete="name"
+        />
+        {!nameError && (
+          <p id={nameHintId} className="text-sm text-muted-foreground">
+            Wprowadź swoje imię
+          </p>
+        )}
+        {nameError && (
+          <p id={nameErrorId} className="text-sm text-destructive" role="alert">
+            {nameError}
+          </p>
+        )}
+      </div>
 
       {/* Email Field */}
       <div className="space-y-2">

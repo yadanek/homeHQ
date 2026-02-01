@@ -19,7 +19,7 @@
 
 import { useState, useCallback } from 'react';
 import { createFamily as createFamilyAction } from '@/actions/createFamily';
-import { MOCK_USER } from '@/lib/mockAuth';
+import { useAuth } from '@/hooks/useAuth';
 import type {
   CreateFamilyRequest,
   CreateFamilyResponse,
@@ -66,20 +66,17 @@ interface UseCreateFamilyReturn {
  * ```
  */
 export function useCreateFamily(): UseCreateFamilyReturn {
+  const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
   /**
    * Helper function to get user's display name from auth context
-   * TODO: Replace with real auth context when available
+   * Retrieves display_name from user metadata saved during registration
    */
   const getUserDisplayName = useCallback((): string => {
-    // TODO: Replace with real auth context
-    // const { user } = useAuth();
-    // return user?.user_metadata?.display_name || 'User';
-    
-    return MOCK_USER.user_metadata.display_name || 'User';
-  }, []);
+    return user?.display_name || user?.email || 'User';
+  }, [user]);
 
   /**
    * Creates a new family with the provided form data

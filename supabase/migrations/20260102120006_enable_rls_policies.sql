@@ -17,7 +17,7 @@ create policy families_select_authenticated
   on families
   for select
   to authenticated
-  using (auth.jwt() ->> 'family_id' = id::text);
+  using (id in (select family_id from profiles where id = auth.uid()));
 
 -- policy: authenticated admins can update their family
 create policy families_update_authenticated
@@ -25,7 +25,7 @@ create policy families_update_authenticated
   for update
   to authenticated
   using (
-    auth.jwt() ->> 'family_id' = id::text
+    id in (select family_id from profiles where id = auth.uid())
     and exists (
       select 1 from profiles
       where id = auth.uid()
@@ -49,7 +49,7 @@ create policy profiles_select_authenticated
   on profiles
   for select
   to authenticated
-  using (auth.jwt() ->> 'family_id' = family_id::text);
+  using (family_id in (select family_id from profiles where id = auth.uid()));
 
 -- policy: authenticated users can always read their own profile (needed during onboarding)
 create policy profiles_select_own_authenticated
@@ -83,7 +83,7 @@ create policy invitation_codes_select_authenticated
   for select
   to authenticated
   using (
-    auth.jwt() ->> 'family_id' = family_id::text
+    family_id in (select family_id from profiles where id = auth.uid())
     and exists (
       select 1 from profiles
       where id = auth.uid()
@@ -97,7 +97,7 @@ create policy invitation_codes_insert_authenticated
   for insert
   to authenticated
   with check (
-    auth.jwt() ->> 'family_id' = family_id::text
+    family_id in (select family_id from profiles where id = auth.uid())
     and exists (
       select 1 from profiles
       where id = auth.uid()
@@ -119,8 +119,8 @@ create policy family_members_all
   on family_members
   for all 
   to authenticated
-  using (auth.jwt() ->> 'family_id' = family_id::text)
-  with check (auth.jwt() ->> 'family_id' = family_id::text);
+  using (family_id in (select family_id from profiles where id = auth.uid()))
+  with check (family_id in (select family_id from profiles where id = auth.uid()));
 
 comment on policy family_members_all on family_members is 'allows family members to manage family_members in their family';
 
@@ -138,7 +138,7 @@ create policy events_select_shared_authenticated
   for select
   to authenticated
   using (
-    auth.jwt() ->> 'family_id' = family_id::text
+    family_id in (select family_id from profiles where id = auth.uid())
     and is_private = false
     and archived_at is null
   );
@@ -160,7 +160,7 @@ create policy events_insert_authenticated
   for insert
   to authenticated
   with check (
-    auth.jwt() ->> 'family_id' = family_id::text
+    family_id in (select family_id from profiles where id = auth.uid())
     and created_by = auth.uid()
   );
 
@@ -205,7 +205,7 @@ create policy participants_select_authenticated
       select 1 from events e
       where e.id = event_id
         and (e.is_private = false or e.created_by = auth.uid())
-        and auth.jwt() ->> 'family_id' = e.family_id::text
+        and e.family_id in (select family_id from profiles where id = auth.uid())
     )
   );
 
@@ -253,7 +253,7 @@ create policy tasks_select_shared_authenticated
   for select
   to authenticated
   using (
-    family_id::text = auth.jwt() ->> 'family_id'
+    family_id in (select family_id from profiles where id = auth.uid())
     and is_private = false
     and archived_at is null
   );
@@ -275,7 +275,7 @@ create policy tasks_insert_authenticated
   for insert
   to authenticated
   with check (
-    family_id::text = auth.jwt() ->> 'family_id'
+    family_id in (select family_id from profiles where id = auth.uid())
     and created_by = auth.uid()
   );
 

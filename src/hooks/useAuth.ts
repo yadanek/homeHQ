@@ -35,7 +35,7 @@ interface UseAuthReturn {
   error: Error | null;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string, displayName: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (newPassword: string, token?: string) => Promise<{ success: boolean; error?: string }>;
@@ -224,7 +224,7 @@ export function useAuth(): UseAuthReturn {
   /**
    * Sign up with email and password
    */
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -233,6 +233,11 @@ export function useAuth(): UseAuthReturn {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            display_name: displayName.trim(),
+          },
+        },
       });
       
       if (signUpError) {

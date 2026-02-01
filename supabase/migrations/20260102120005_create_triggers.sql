@@ -53,6 +53,7 @@ create trigger trg_update_timestamp_tasks
 -- applies to: profiles table
 -- event: after insert or update of family_id
 -- optimization: eliminates join to profiles table in rls policies
+-- note: this is optional optimization, policies work with or without JWT sync
 -- =============================================================================
 
 create or replace function sync_family_to_jwt()
@@ -63,11 +64,18 @@ set search_path = public
 as $$
 begin
   -- update auth.users raw_app_meta_data with family_id
-  update auth.users
-  set raw_app_meta_data = 
-    coalesce(raw_app_meta_data, '{}'::jsonb) || 
-    jsonb_build_object('family_id', new.family_id::text)
-  where id = new.id;
+  -- wrapped in exception handler to prevent trigger failure if auth.users is not accessible
+  begin
+    update auth.users
+    set raw_app_meta_data = 
+      coalesce(raw_app_meta_data, '{}'::jsonb) || 
+      jsonb_build_object('family_id', new.family_id::text)
+    where id = new.id;
+  exception
+    when others then
+      -- log error but don't fail the trigger
+      raise warning 'failed to sync family_id to jwt for user %: %', new.id, sqlerrm;
+  end;
   
   return new;
 end;

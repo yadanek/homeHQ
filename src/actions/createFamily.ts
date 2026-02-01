@@ -110,13 +110,6 @@ export async function createFamily(
       validationResult.data
     );
 
-    // === Step 3.5: Refresh session to get updated JWT with family_id ===
-    const { error: refreshError } = await supabase.auth.refreshSession();
-    if (refreshError) {
-      console.warn('[createFamily] Failed to refresh session (non-fatal):', refreshError);
-      // Don't fail - family was created successfully
-    }
-
     // === Step 4: Return Success Response ===
     return {
       success: true,
