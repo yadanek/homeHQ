@@ -85,11 +85,11 @@ export function TaskDueDatePicker({ value, onChange, error, disabled = false }: 
         aria-invalid={error ? 'true' : 'false'}
         className={error ? 'border-destructive' : ''}
       />
-      {!error && (
+      {/* {!error && (
         <p id={hintId} className="text-sm text-muted-foreground">
           Optional. Tasks without dates go to &quot;No Due Date&quot; section.
         </p>
-      )}
+      )} */}
       {error && (
         <p id={errorId} className="text-sm text-destructive" role="alert">
           {error}
