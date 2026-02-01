@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { deleteEventByTitle } from './utils/helpers';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,12 +13,6 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env.test') });
 
 const TEST_EMAIL = process.env.E2E_USERNAME || 'test@example.com';
 const TEST_PASSWORD = process.env.E2E_PASSWORD || 'Test123456!';
-
-// Debug: Log loaded credentials
-console.log('🔍 E2E Test Config:');
-console.log('  .env.test path:', path.resolve(__dirname, '..', '.env.test'));
-console.log('  TEST_EMAIL:', TEST_EMAIL);
-console.log('  TEST_PASSWORD:', TEST_PASSWORD ? '***' + TEST_PASSWORD.slice(-3) : 'NOT SET');
 
 /**
  * E2E Test: Create Event Flow
@@ -134,12 +129,6 @@ test.describe('Create Event Flow', () => {
       // Check if suggestions section is visible
       const suggestionsSection = page.locator('h3:has-text("AI Task Suggestions")');
       const hasSuggestions = await suggestionsSection.isVisible().catch(() => false);
-      
-      if (hasSuggestions) {
-        console.log('✅ AI suggestions loaded');
-      } else {
-        console.log('ℹ️ No AI suggestions appeared (this may be expected)');
-      }
     });
 
     // Step 6: Select first suggestion if available
@@ -151,9 +140,6 @@ test.describe('Create Event Flow', () => {
       if (checkboxExists) {
         await firstSuggestionCheckbox.check();
         await expect(firstSuggestionCheckbox).toBeChecked();
-        console.log('✅ First suggestion selected');
-      } else {
-        console.log('ℹ️ No suggestions available to select');
       }
     });
 
@@ -184,23 +170,41 @@ test.describe('Create Event Flow', () => {
       const successVisible = await successMessage.isVisible().catch(() => false);
       
       expect(dialogClosed || successVisible).toBeTruthy();
-      console.log('✅ Event created successfully!');
     });
 
-    // Optional: Verify event appears in calendar
-    await test.step('Verify event appears in dashboard', async () => {
-      // Wait a bit for the dialog to close and calendar to refresh
-      await page.waitForTimeout(1000);
+    // Cleanup: Delete the created event
+    await test.step('Cleanup: Delete created event', async () => {
+      // Wait for dialog to fully close
+      await page.waitForTimeout(1500);
 
-      // Look for the event title in the calendar view
-      // Note: This is optional as the event might be on a different date view
+      // Find and click on the created event
       const eventInCalendar = page.locator('text=Doctor appointment').first();
       const eventVisible = await eventInCalendar.isVisible().catch(() => false);
       
       if (eventVisible) {
-        console.log('✅ Event visible in calendar');
-      } else {
-        console.log('ℹ️ Event might be on a different calendar view');
+        await eventInCalendar.click();
+        
+        // Wait for event details dialog to open
+        await page.waitForTimeout(500);
+        
+        // Click delete button (trash icon or Delete button)
+        const deleteButton = page.locator('button[aria-label="Delete event"]').or(
+          page.locator('button:has-text("Delete")')
+        );
+        
+        const deleteVisible = await deleteButton.first().isVisible().catch(() => false);
+        if (deleteVisible) {
+          await deleteButton.first().click();
+          
+          // Confirm deletion if there's a confirmation dialog
+          const confirmButton = page.locator('button:has-text("Confirm")').or(
+            page.locator('button:has-text("Delete")')
+          );
+          await confirmButton.first().click().catch(() => {});
+          
+          // Wait for deletion to complete
+          await page.waitForTimeout(500);
+        }
       }
     });
   });

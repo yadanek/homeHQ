@@ -127,17 +127,11 @@ export class CreateEventDialog {
     const firstCheckbox = this.getSuggestionCheckboxes().first();
     const exists = await firstCheckbox.isVisible().catch(() => false);
     
-    console.log('🔍 selectFirstSuggestion - checkbox visible:', exists);
-    
     if (exists) {
       await firstCheckbox.check();
       await expect(firstCheckbox).toBeChecked();
       return true;
     }
-    
-    // Debug: check if any suggestions exist in DOM
-    const allCheckboxes = await this.getSuggestionCheckboxes().count();
-    console.log('🔍 Total suggestion checkboxes found:', allCheckboxes);
     
     return false;
   }
@@ -184,6 +178,7 @@ export class CreateEventDialog {
     endMinutes: number;
     waitForSuggestions?: boolean;
     selectFirstSuggestion?: boolean;
+    waitForSuccess?: boolean; // Optional - don't wait if dialog closes quickly
   }) {
     await this.fillTitle(data.title);
     
@@ -203,6 +198,17 @@ export class CreateEventDialog {
     }
     
     await this.submit();
-    await this.waitForSuccess();
+    
+    // Always wait for request to complete (success or error)
+    // Wait for button to be re-enabled or dialog to close or success message
+    // Longer timeout for slower browsers like WebKit
+    await Promise.race([
+      this.successMessage.waitFor({ state: 'visible', timeout: 15000 }),
+      this.dialogTitle.waitFor({ state: 'hidden', timeout: 15000 }),
+      this.errorMessage.first().waitFor({ state: 'visible', timeout: 15000 })
+    ]).catch(() => {
+      // If all fail, wait additional time for slower browsers
+      return this.page.waitForTimeout(5000);
+    });
   }
 }

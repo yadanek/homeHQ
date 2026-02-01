@@ -75,7 +75,6 @@ export async function createEvent(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.warn('Unauthenticated event creation attempt');
       return {
         success: false,
         error: {
@@ -91,7 +90,6 @@ export async function createEvent(
     const validation = createEventSchema.safeParse(formData);
     if (!validation.success) {
       const fieldErrors = validation.error.flatten().fieldErrors;
-      console.warn('Event validation failed:', fieldErrors);
       return {
         success: false,
         error: {
@@ -106,8 +104,6 @@ export async function createEvent(
 
     // Step 3: Get user context (family_id and role from profile)
     // In DEV mode, we still fetch from real database (not mock metadata)
-    let familyId;
-    let userRole: UserRole;
     
     // Always fetch profile from database (even in DEV mode)
     const { data: profile, error: profileError } = await supabase
@@ -117,7 +113,6 @@ export async function createEvent(
       .single();
 
     if (profileError || !profile) {
-      console.warn(`Failed to get profile for user ${user.id}:`, profileError);
       return {
         success: false,
         error: {
@@ -130,11 +125,10 @@ export async function createEvent(
       };
     }
 
-    familyId = profile.family_id;
-    userRole = profile.role as UserRole;
+    const familyId = profile.family_id;
+    const userRole = profile.role as UserRole;
 
     if (!familyId) {
-      console.warn(`User ${user.id} attempted to create event without family`);
       return {
         success: false,
         error: {
@@ -146,22 +140,6 @@ export async function createEvent(
       };
     }
 
-    // Ensure JWT app_metadata has up-to-date family_id for RLS policies
-    // Even if signIn handled this, re-sync defensively right before insert
-    try {
-      const { error: syncError } = await supabase.rpc('sync_current_user_jwt');
-      if (syncError) {
-        console.warn('[createEvent] JWT sync failed (non-fatal):', syncError);
-      } else {
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.warn('[createEvent] Session refresh after JWT sync failed:', refreshError);
-        }
-      }
-    } catch (e) {
-      console.warn('[createEvent] Unexpected error during JWT sync:', e);
-    }
-
     // Step 4: Additional validation - private event constraints
     // This is a business rule check beyond Zod schema validation
     if (
@@ -169,7 +147,6 @@ export async function createEvent(
       validation.data.participant_ids &&
       validation.data.participant_ids.length > 1
     ) {
-      console.warn('Attempt to create private event with multiple participants');
       return {
         success: false,
         error: {
@@ -190,38 +167,30 @@ export async function createEvent(
       userRole
     );
 
-    console.info(
-      `Event created successfully: ${result.event.id} by user ${user.id}`
-    );
-
     return {
       success: true,
       data: result
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Step 6: Handle service layer errors
-    console.error('Event creation error:', {
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
+    const err = error as any;
 
     // Handle ServiceError (from service layer)
-    if (error.statusCode) {
+    if (err.statusCode) {
       return {
         success: false,
         error: {
           error: {
-            code: error.code,
-            message: error.message,
-            details: error.details
+            code: err.code,
+            message: err.message,
+            details: err.details
           }
         }
       };
     }
 
     // Handle specific error messages
-    if (error.message?.includes('Participant does not belong')) {
+    if (err.message?.includes('Participant does not belong')) {
       return {
         success: false,
         error: {
@@ -233,7 +202,7 @@ export async function createEvent(
       };
     }
 
-    if (error.message?.includes('same family')) {
+    if (err.message?.includes('same family')) {
       return {
         success: false,
         error: {
@@ -253,7 +222,7 @@ export async function createEvent(
           code: 'INTERNAL_ERROR',
           message: 'Failed to create event. Please try again.',
           details: {
-            technical: error.message
+            technical: err.message
           }
         }
       }

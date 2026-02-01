@@ -519,7 +519,12 @@ export class EventsService {
     user_role?: UserRole
   ): Promise<TaskSuggestion[]> {
     try {
-      const { data, error } = await this.supabase.functions.invoke(
+      // Add timeout to prevent hanging requests (5 seconds max)
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('AI suggestions timeout')), 5000);
+      });
+
+      const invokePromise = this.supabase.functions.invoke(
         'analyze-event-for-suggestions',
         {
           body: {
@@ -530,6 +535,8 @@ export class EventsService {
           }
         }
       );
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as any;
 
       if (error) {
         console.warn('AI suggestion engine error (graceful degradation):', error);

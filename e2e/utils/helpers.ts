@@ -184,3 +184,35 @@ export async function retry<T>(
   
   throw lastError || new Error('Retry failed');
 }
+
+/**
+ * Delete event by title (for test cleanup)
+ */
+export async function deleteEventByTitle(page: any, eventTitle: string): Promise<void> {
+  await page.waitForTimeout(1500);
+  
+  const eventInCalendar = page.locator(`text=${eventTitle}`).first();
+  const eventVisible = await eventInCalendar.isVisible().catch(() => false);
+  
+  if (eventVisible) {
+    await eventInCalendar.click();
+    await page.waitForTimeout(500);
+    
+    const deleteButton = page.locator('button[aria-label="Delete event"]').or(
+      page.locator('button:has-text("Delete")')
+    );
+    
+    const deleteVisible = await deleteButton.first().isVisible().catch(() => false);
+    if (deleteVisible) {
+      await deleteButton.first().click();
+      
+      // Confirm deletion if there's a confirmation dialog
+      const confirmButton = page.locator('button:has-text("Confirm")').or(
+        page.locator('button:has-text("Delete")')
+      );
+      await confirmButton.first().click().catch(() => {});
+      
+      await page.waitForTimeout(500);
+    }
+  }
+}
